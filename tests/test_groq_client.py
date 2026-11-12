@@ -51,7 +51,13 @@ class GroqTests(TestCase):
         GroqClient('fixture', opener=opener).complete([], tools=[{'type': 'function', 'function': {
             'name': 'consultar_metricas', 'parameters': {'type': 'object', 'properties': {}}}}])
         self.assertIs(captured[0]['parallel_tool_calls'], False)
-        self.assertEqual(captured[0]['tool_choice'], 'required')
+        self.assertEqual(captured[0]['tool_choice'], {'type': 'function', 'function': {'name': 'consultar_metricas'}})
+
+    def test_tool_configuration_refuses_ambiguous_multi_tool_request(self):
+        tools = [{'function': {'name': 'a'}}, {'function': {'name': 'b'}}]
+        with self.assertRaises(ProviderError) as error:
+            GroqClient('fixture').complete([], tools=tools)
+        self.assertEqual(error.exception.code, 'invalid_tool_configuration')
 
     def test_http_diagnostic_retains_status_and_allowlisted_code_only(self):
         raw = json.dumps({'error': {'code': 'tool_use_failed', 'message': 'fixture-secret',

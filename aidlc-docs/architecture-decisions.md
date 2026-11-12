@@ -27,3 +27,7 @@ Narrativa estruturada é solicitada depois das ferramentas, pois a combinação 
 JSON, HTML e auditoria JSONL ficam em volume privado, sem aumentar privilégios do reader PostgreSQL. Execução síncrona, uma geração simultânea e um worker atendem à PoC; não oferecem fila durável, cancelamento ou escala horizontal. Publicação externa exige autenticação, revisão de privacidade, backup e retenção do volume.
 
 Atualização operacional: inventário, carga idempotente, reader restrito e API real foram confirmados pelo operador em HML. Credencial Groq validada por listagem de modelos; isso não equivale a inferência LLM. Primeira geração real da U5 ainda pendente.
+
+### Revisão por evidência HML — coleta prescrita e redação isolada
+
+Gerações reais retornaram HTTP 400/tool_use_failed na primeira chamada, inclusive após desabilitar paralelismo. Uma tentativa isolada teve sucesso; não houve relatório completo aceito. Revisado para oferecer uma função obrigatória por etapa com tool_choice nomeado, em ordem fixada pelo orquestrador. Há function calling real e validação do retorno; deixa de haver escolha livre de ordem pelo modelo. Prompt de coleta separado do de redação. A redação parte de evidências explícitas em conversa nova, evitando carregar instruções de coleta para uma requisição sem ferramentas. Não adicionar retries automáticos ou desabilitar validação da Groq. Aceite pendente de nova geração na VM.

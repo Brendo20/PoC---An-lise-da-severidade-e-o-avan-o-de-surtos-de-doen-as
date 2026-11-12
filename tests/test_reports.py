@@ -35,7 +35,11 @@ class ReportTests(TestCase):
         self.assertEqual(len(self.client.calls), 4)
         self.assertIsNone(self.client.calls[0]["schema"])
         self.assertIsNone(self.client.calls[3]["tools"])
-        self.assertEqual([len(call["tools"]) for call in self.client.calls[:3]], [3, 2, 1])
+        self.assertEqual([len(call["tools"]) for call in self.client.calls[:3]], [1, 1, 1])
+        self.assertEqual([call["tools"][0]["function"]["name"] for call in self.client.calls[:3]],
+                         ["consultar_metricas", "consultar_series", "buscar_noticias"])
+        self.assertFalse(any(item['role'] == 'tool' for item in self.client.calls[3]['messages']))
+        self.assertIn('Não solicite nem chame ferramentas', self.client.calls[3]['messages'][0]['content'])
         html = self.store.html(report["report_id"])
         self.assertEqual(html.count('<svg '), 2)
         self.assertIn("Não calculável", html)
@@ -75,6 +79,7 @@ class ReportTests(TestCase):
 
     def test_unknown_tool_and_arguments_fail_closed_with_controlled_data(self):
         for function in ({"name": "executar_sql", "arguments": "{}"},
+                         {"name": "buscar_noticias", "arguments": "{}"},
                          {"name": "consultar_metricas", "arguments": '{"sql":"DROP"}'}):
             class Invalid(Client):
                 def complete(self, *args, **kwargs):

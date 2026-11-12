@@ -43,7 +43,10 @@ class GroqClient:
                    "max_completion_tokens": 1800, "reasoning_effort": "low"}
         if tools:
             # GPT-OSS na Groq suporta ferramentas, mas não chamadas paralelas.
-            payload.update(tools=tools, tool_choice="required", parallel_tool_calls=False)
+            if len(tools) != 1:
+                raise ProviderError("invalid_tool_configuration")
+            payload.update(tools=tools, tool_choice={"type": "function", "function": {
+                "name": tools[0]["function"]["name"]}}, parallel_tool_calls=False)
         if schema is not None:
             payload["response_format"] = {"type": "json_schema", "json_schema": {
                 "name": "srag_report", "strict": True, "schema": schema}}

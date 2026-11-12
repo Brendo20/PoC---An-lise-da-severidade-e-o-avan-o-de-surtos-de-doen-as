@@ -1,5 +1,11 @@
 # Registro AI-DLC
 
+## 12/11/2026 — HTTP 400/tool_use_failed confirmado; revisão das fases
+- Operador confirmou rebuild saudável e nova falha tool_use_failed na primeira rodada com paralelismo desativado. Correção anterior não resolveu a integração; nenhuma narrativa foi aceita. Dados e cinco notícias preservados no relatório parcial.
+- Separados prompts de coleta e redação. O orquestrador prescreve a sequência obrigatória de três ferramentas e oferece uma por requisição, com tool_choice nomeado; valida nome oferecido e argumentos vazios antes de executar. Isso substitui seleção livre da ordem pelo modelo e foi registrado na arquitetura.
+- Redação inicia conversa nova com métricas, séries e notícias coletadas, sem histórico de function calls ou comando para usar ferramentas. Limites, supressões e validações de narrativa permanecem aplicados. Sem retentativa automática ou desligamento da validação de ferramentas.
+- Validação local: 53 testes Python passaram, incluindo três etapas e isolamento do contexto final, tool_choice explícito e rejeição de configuração ambígua. Diagnóstico HML passa a informar versão do prompt e rodadas concluídas. Sucesso real da Groq ainda não confirmado; não atribuir o erro a uma causa textual específica sem evidência.
+
 ## 12/11/2026 — Correção de compatibilidade Groq após falha em HML
 - Evidência do operador: duas gerações completas tentadas resultaram em relatório parcial, cinco notícias e 12 eventos, sem narrativa. Diagnóstico isolado da primeira chamada teve sucesso com uma ferramenta; não comprova estabilidade do fluxo inteiro.
 - Revisão da documentação oficial identificou incompatibilidade: GPT-OSS não suporta ferramentas paralelas, mas o cliente habilitava parallel_tool_calls=true e o prompt incentivava mesma rodada. Corrigido para false e uma chamada por rodada; ferramentas continuam sendo escolhidas pelo modelo com escopo validado.

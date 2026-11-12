@@ -38,9 +38,11 @@ with urllib.request.urlopen(BASE + '/api/reports/' + report['report_id'] + '/htm
     assert response.read().count(b'<svg ') == 2, 'Relatório sem os dois gráficos'
 print(json.dumps({
     'status': report['status'], 'report_id': report['report_id'], 'modelo': report['model'],
+    'prompt_version': report['prompt_version'],
     'snapshot_id': report['snapshot_id'], 'carga': report['loaded_at'],
     'noticias': len(report['news']['articles']), 'narrativa_validada': report['analysis'] is not None,
     'avisos': report['warnings'], 'cache': report['cached'], 'eventos_auditoria': len(report['audit']),
+    'rodadas_ferramentas': sum(event['event'] == 'llm_tool_round' for event in report['audit']),
     'erros_provedor': [{key: event.get(key) for key in ('event', 'error_code', 'http_status', 'provider_code')}
                        for event in report['audit'] if event.get('http_status') is not None],
     'relatorio': '/api/reports/' + report['report_id'] + '/html'

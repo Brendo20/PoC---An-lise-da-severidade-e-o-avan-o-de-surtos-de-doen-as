@@ -46,14 +46,13 @@ class Client:
         self.calls = []
 
     def complete(self, messages, *, tools=None, schema=None):
-        self.calls.append({"tools": tools, "schema": schema})
+        self.calls.append({"tools": tools, "schema": schema, "messages": messages.copy()})
         if tools:
             message = {"tool_calls": [{"id": f"call-{i}", "type": "function", "function": {
                 "name": tool["function"]["name"], "arguments": "{}"}} for i, tool in enumerate(tools[:1])]}
         else:
             # Derivar tendências exclusivamente do resultado controlado da ferramenta.
-            metrics = next(json.loads(item["content"]) for item in messages if item["role"] == "tool"
-                           and '"growth"' in item["content"])
+            metrics = json.loads(messages[1]["content"])["metrics"]
             message = {"content": json.dumps({"historical_commentary": "O recorte apresenta variação dos registros e exige atenção aos dados ausentes.",
                 "current_commentary": "Os títulos recentes abordam SRAG; a leitura integral das matérias não foi realizada.",
                 "cited_news_ids": ["news-fixture"],
