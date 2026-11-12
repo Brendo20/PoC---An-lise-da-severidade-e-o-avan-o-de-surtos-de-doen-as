@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import urllib.error
 import urllib.request
@@ -11,12 +12,15 @@ ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
 
 
 class ProviderError(RuntimeError):
-    def __init__(self, code: str, status: int | None = None, provider_code: str | None = None):
+    def __init__(self, code: str, status: int | None = None, provider_code: str | None = None,
+                 retry_after_seconds: int | None = None):
         super().__init__(code)
         self.code, self.status, self.provider_code = code, status, provider_code
+        self.retry_after_seconds = retry_after_seconds
 
     def diagnostic(self) -> dict:
-        return {"http_status": self.status, "provider_code": self.provider_code}
+        return {"http_status": self.status, "provider_code": self.provider_code,
+                "retry_after_seconds": self.retry_after_seconds}
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -40,7 +44,7 @@ class GroqClient:
         if len(json.dumps(messages, ensure_ascii=False)) > 28000:
             raise ProviderError("context_limit")
         payload = {"model": self.model, "messages": messages, "temperature": 0.1,
-                   "max_completion_tokens": 1800, "reasoning_effort": "low"}
+                   "max_completion_tokens": 512 if tools else 1800, "reasoning_effort": "low"}
         if tools:
             # GPT-OSS na Groq suporta ferramentas, mas não chamadas paralelas.
             if len(tools) != 1:
@@ -69,6 +73,14 @@ class GroqClient:
                               for key in ("prompt_tokens", "completion_tokens", "total_tokens")},
                     "response_id": str(result.get("id", ""))[:120]}
         except urllib.error.HTTPError as error:
+            retry_after = None
+            if error.code == 429:
+                try:
+                    seconds = float((error.headers or {}).get("Retry-After", ""))
+                    if math.isfinite(seconds) and 0 <= seconds <= 86400:
+                        retry_after = math.ceil(seconds)
+                except (ValueError, TypeError):
+                    pass
             # Não guardar mensagem bruta/failed_generation: podem conter prompts ou raciocínio.
             provider_code = None
             try:
@@ -81,7 +93,7 @@ class GroqClient:
                 pass
             code = {401: "authentication_error", 403: "permission_error", 429: "rate_limit"}.get(
                 error.code, f"provider_http_{error.code}")
-            raise ProviderError(code, error.code, provider_code) from None
+            raise ProviderError(code, error.code, provider_code, retry_after) from None
         except (urllib.error.URLError, TimeoutError, OSError):
             raise ProviderError("provider_connection_error") from None
         except (ValueError, KeyError, IndexError, TypeError):

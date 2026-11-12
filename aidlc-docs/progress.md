@@ -1,5 +1,11 @@
 # Registro AI-DLC
 
+## 12/11/2026 — Três ferramentas aceitas em HML; quota bloqueou redação
+- Operador confirmou prompt v3 e três rodadas de ferramentas concluídas na Groq. Relatório parcial 8d9858acbed44c3182153e7d6d8ee2f8 preservou carga, métricas, séries e cinco notícias. Na etapa llm_unavailable, HTTP 429/rate_limit_exceeded impediu narrativa. Gate de ferramentas reais validado; gate de narrativa permanece aberto.
+- Não é possível concluir qual janela de quota foi atingida a partir do registro anterior. Reduzido contexto das coletas independentes e orçamento máximo de saída de 1.800 para 512 por chamada de ferramenta. Redação recebe métricas e notícias compactas; gráficos e séries completos continuam no relatório.
+- Diagnóstico passa a preservar Retry-After numérico válido em segundos. Sem retries automáticos, troca de conta ou promessa de quota gratuita disponível. Consultar limites da organização no Console da Groq quando necessário.
+- 54 testes Python passaram, cobrindo tamanho de contexto por fase, evidências preservadas, orçamento de ferramentas e Retry-After sanitizado. Nova geração real com narrativa ainda pendente após atualização e disponibilidade de quota.
+
 ## 12/11/2026 — HTTP 400/tool_use_failed confirmado; revisão das fases
 - Operador confirmou rebuild saudável e nova falha tool_use_failed na primeira rodada com paralelismo desativado. Correção anterior não resolveu a integração; nenhuma narrativa foi aceita. Dados e cinco notícias preservados no relatório parcial.
 - Separados prompts de coleta e redação. O orquestrador prescreve a sequência obrigatória de três ferramentas e oferece uma por requisição, com tool_choice nomeado; valida nome oferecido e argumentos vazios antes de executar. Isso substitui seleção livre da ordem pelo modelo e foi registrado na arquitetura.

@@ -51,6 +51,7 @@ class GroqTests(TestCase):
         GroqClient('fixture', opener=opener).complete([], tools=[{'type': 'function', 'function': {
             'name': 'consultar_metricas', 'parameters': {'type': 'object', 'properties': {}}}}])
         self.assertIs(captured[0]['parallel_tool_calls'], False)
+        self.assertEqual(captured[0]['max_completion_tokens'], 512)
         self.assertEqual(captured[0]['tool_choice'], {'type': 'function', 'function': {'name': 'consultar_metricas'}})
 
     def test_tool_configuration_refuses_ambiguous_multi_tool_request(self):
@@ -67,6 +68,14 @@ class GroqTests(TestCase):
         with self.assertRaises(ProviderError) as error:
             GroqClient('fixture-secret', opener=opener).complete([])
         self.assertEqual(error.exception.code, 'provider_http_400')
-        self.assertEqual(error.exception.diagnostic(), {'http_status': 400, 'provider_code': 'tool_use_failed'})
+        self.assertEqual(error.exception.diagnostic(), {'http_status': 400, 'provider_code': 'tool_use_failed', 'retry_after_seconds': None})
         self.assertNotIn('fixture-secret', str(error.exception.__dict__))
         self.assertNotIn('private reasoning', str(error.exception.__dict__))
+
+    def test_rate_limit_preserves_only_valid_retry_after_seconds(self):
+        for value, expected in [('2.5', 3), ('86401', None), ('nan', None), ('private-value', None)]:
+            def opener(*args, **kwargs):
+                raise urllib.error.HTTPError('https://api.groq.com', 429, '', {'Retry-After': value}, BytesIO(b'{}'))
+            with self.assertRaises(ProviderError) as error:
+                GroqClient('fixture', opener=opener).complete([])
+            self.assertEqual(error.exception.retry_after_seconds, expected)

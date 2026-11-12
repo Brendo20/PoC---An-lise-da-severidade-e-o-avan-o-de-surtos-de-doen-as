@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 from srag.groq_client import ProviderError
 
-PROMPT_VERSION = "srag-2019-v3-staged"
+PROMPT_VERSION = "srag-2019-v4-compact"
 TOOL_DESCRIPTIONS = {
     "consultar_metricas": "Consultar indicadores agregados dos territórios já selecionados e da carga fixada.",
     "consultar_series": "Consultar séries de trinta dias e doze meses dos territórios selecionados.",
@@ -97,7 +97,6 @@ class ReportAgent:
         results, warnings = {}, []
         pending = set(TOOL_DESCRIPTIONS)
         messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": json.dumps({
-            "task": "Gerar análise descritiva do recorte e contexto atual separado.",
             "territories": territories, "reference": snapshot["metadata"]["reference"]}, ensure_ascii=False)}]
 
         def execute(name):
@@ -114,10 +113,6 @@ class ReportAgent:
             encoded = json.dumps(value, sort_keys=True, ensure_ascii=False).encode()
             emit("tool_completed", tool=name, duration_ms=round((time.monotonic() - start) * 1000),
                  result_sha256=hashlib.sha256(encoded).hexdigest())
-            if name == "consultar_series":
-                return {territory: {kind: [[p["date"], p["value"], p["status"]] for p in points]
-                                    for kind, points in document.items()} for territory, document in value.items()}
-            return value
 
         provider_ok = True
         try:
@@ -144,10 +139,10 @@ class ReportAgent:
                         raise ValueError("tool_not_allowed")
                     names.add(name); call_ids.add(call_id)
                     normalized.append({"id": call_id, "type": "function", "function": {"name": name, "arguments": "{}"}})
-                messages.append({"role": "assistant", "content": None, "tool_calls": normalized})
                 for item in normalized:
-                    output = execute(item["function"]["name"])
-                    messages.append({"role": "tool", "tool_call_id": item["id"], "content": json.dumps(output, ensure_ascii=False)})
+                    # Etapas prescritas são independentes. Não reenviar os resultados anteriores;
+                    # são preservados em results para a redação e no relatório/auditoria.
+                    execute(item["function"]["name"])
         except (ProviderError, ValueError, KeyError, TypeError) as error:
             provider_ok = False
             warnings.append(error.code if isinstance(error, ProviderError) else "tool_response_rejected")
@@ -165,10 +160,10 @@ class ReportAgent:
             # Isso evita que o modelo tente chamar ferramentas numa requisição JSON sem tools.
             messages = [{"role": "system", "content": NARRATIVE_SYSTEM}, {"role": "user", "content": json.dumps({
                 "territories": territories, "reference": snapshot["metadata"]["reference"],
-                "metrics": metrics, "news": news,
-                "series": {territory: {kind: [[p["date"], p["value"], p["status"]] for p in points]
-                    for kind, points in document.items()}
-                    for territory, document in results["consultar_series"].items()}}, ensure_ascii=False)}]
+                "metrics": metrics,
+                "news": {"status": news["status"], "articles": [{key: article[key] for key in (
+                    "id", "title", "excerpt", "source", "published_at")} for article in news["articles"]]}
+                }, ensure_ascii=False)}]
             for attempt in range(2):
                 try:
                     response = self.client.complete(messages, schema=output_schema(territories))

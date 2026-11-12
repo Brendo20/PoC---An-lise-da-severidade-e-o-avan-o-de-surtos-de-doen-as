@@ -43,7 +43,7 @@ print(json.dumps({
     'noticias': len(report['news']['articles']), 'narrativa_validada': report['analysis'] is not None,
     'avisos': report['warnings'], 'cache': report['cached'], 'eventos_auditoria': len(report['audit']),
     'rodadas_ferramentas': sum(event['event'] == 'llm_tool_round' for event in report['audit']),
-    'erros_provedor': [{key: event.get(key) for key in ('event', 'error_code', 'http_status', 'provider_code')}
+    'erros_provedor': [{key: event.get(key) for key in ('event', 'error_code', 'http_status', 'provider_code', 'retry_after_seconds')}
                        for event in report['audit'] if event.get('http_status') is not None],
     'relatorio': '/api/reports/' + report['report_id'] + '/html'
 }, ensure_ascii=False, indent=2))
