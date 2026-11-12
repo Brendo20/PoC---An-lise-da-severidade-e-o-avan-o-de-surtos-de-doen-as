@@ -1,5 +1,10 @@
 # Registro AI-DLC
 
+## 12/11/2026 — Migração HML confirmada pelo operador
+- Operador confirmou .env com modo 600 e ignorado pelo Git, migração 001 aplicada no banco exclusivo e zero snapshots.
+- Preparado Dockerfile.tools com contexto de build em allowlist, downloader com hash fixado e runbook de carga inicial.
+- Próximo passo operacional: build ARM64, download verificado, agregação e carga/consulta no PostgreSQL. Nenhuma execução dessas etapas na VM foi presumida.
+
 ## 12/11/2026 — Preparação da primeira versão Git
 - Usuário forneceu o repositório GitHub de destino: Brendo20/PoC---An-lise-da-severidade-e-o-avan-o-de-surtos-de-doen-as.
 - Consulta remota confirmou ausência de branches; diretório local ainda não tinha Git.

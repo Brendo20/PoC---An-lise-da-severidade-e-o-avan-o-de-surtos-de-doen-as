@@ -1,0 +1,11 @@
+**
+!.dockerignore
+!Dockerfile.tools
+!pyproject.toml
+!README.md
+!src/
+!src/**
+!sql/
+!sql/**
+**/__pycache__/**
+**/*.pyc
