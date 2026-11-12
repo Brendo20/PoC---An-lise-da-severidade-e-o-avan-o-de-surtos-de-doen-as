@@ -13,6 +13,9 @@
   let data;
   let geometry;
   let resizeTimer;
+  let agentConfigured = false;
+  let generating = false;
+  let scopeVersion = 0;
   const displayDate = text => dateFormat.format(new Date(text + 'T00:00:00Z'));
   const displayTimestamp = text => new Intl.DateTimeFormat('pt-BR', {
     dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo',
@@ -61,6 +64,7 @@
   }
 
   function updateFilters(action, value) {
+    const previous = JSON.stringify(selected());
     const valid = id => options().some(([key]) => key === id);
     if (action === 'level') {
       if (!['state', 'region'].includes(value)) return;
@@ -94,6 +98,12 @@
     }
     populate();
     render();
+    if (previous !== JSON.stringify(selected())) {
+      scopeVersion++;
+      $('#sr-agent-result').hidden = true;
+      $('#sr-agent-result').replaceChildren();
+      $('#sr-agent-status').textContent = generating ? 'Concluindo a solicitação anterior. Gere um novo relatório para este recorte.' : agentConfigured ? 'Recorte alterado. Gere um relatório para a seleção atual.' : 'Agente indisponível nesta prévia.';
+    }
   }
 
   function renderMap() {
@@ -366,6 +376,62 @@
     return response.json();
   }
 
+  async function initAgent() {
+    if (dataSource === 'api') {
+      try { agentConfigured = (await loadJson('api/agent/status')).configured === true; }
+      catch { agentConfigured = false; }
+    }
+    $('#sr-generate').disabled = !agentConfigured;
+    $('#sr-agent-status').textContent = agentConfigured ? 'Pronto para gerar o relatório da seleção atual.' : 'Agente não configurado. Disponível no ambiente com provedor de IA habilitado.';
+  }
+
+  async function generateReport() {
+    if (generating || !agentConfigured) return;
+    const version = scopeVersion;
+    generating = true;
+    $('#sr-generate').disabled = true;
+    $('#sr-generate').textContent = 'Gerando…';
+    $('#sr-agent-result').hidden = true;
+    $('#sr-agent-status').textContent = 'Consultando indicadores, séries e notícias. Aguarde a validação do relatório.';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 150000);
+    try {
+      const response = await fetch('api/reports', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ territories: selected(), snapshot_id: data.snapshot_id }), signal: controller.signal });
+      const result = await response.json();
+      if (!response.ok) {
+        const message = response.status === 429 ? 'Aguarde um minuto antes de gerar outro relatório.' : response.status === 409 ? 'A carga mudou. Atualize o dashboard antes de gerar o relatório.' : 'Não foi possível gerar o relatório. Confira o serviço e tente novamente.';
+        throw Error(message);
+      }
+      if (version !== scopeVersion) return;
+      const panel = $('#sr-agent-result'); panel.replaceChildren();
+      panel.append(element('h3', '', selected().map(name).join(' × ')), element('p', 'small', `Gerado em ${displayTimestamp(result.generated_at)} (Brasília)${result.cached ? ' · relatório reutilizado' : ''}`));
+      panel.append(element('h3', '', 'Análise histórica'), element('p', '', result.analysis?.historical_commentary || 'Comentário da IA indisponível ou rejeitado. Consulte os indicadores e gráficos no relatório.'));
+      panel.append(element('h3', '', 'Notícias atuais · contexto separado'));
+      if (result.analysis?.current_commentary) panel.append(element('p', '', result.analysis.current_commentary));
+      if (!result.news.articles.length) panel.append(element('p', '', 'Nenhuma notícia recente verificada disponível nesta consulta.'));
+      for (const article of result.news.articles) {
+        let url; try { url = new URL(article.url); } catch { continue; }
+        if (url.protocol !== 'https:' || url.username || url.password) continue;
+        const paragraph = element('p'); const link = element('a', '', article.title);
+        link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        paragraph.append(link, element('span', 'small', ` · ${article.source} · ${displayTimestamp(article.published_at)}`)); panel.append(paragraph);
+      }
+      if (/^[a-f0-9]{32}$/.test(result.report_id)) {
+        const link = element('a', '', 'Abrir relatório completo com os dois gráficos e auditoria');
+        link.href = `api/reports/${result.report_id}/html`; link.target = '_blank'; link.rel = 'noopener noreferrer'; panel.append(link);
+      }
+      panel.hidden = false;
+      $('#sr-agent-status').textContent = result.status === 'complete' ? 'Relatório concluído e validado.' : 'Relatório parcial: comentário da IA ou notícias indisponíveis. Indicadores preservados.';
+    } catch (error) {
+      if (version === scopeVersion) $('#sr-agent-status').textContent = error.name === 'AbortError' ? 'Tempo de espera excedido. A solicitação pode ainda estar em andamento.' : error.message;
+    } finally {
+      clearTimeout(timeout); generating = false;
+      $('#sr-generate').disabled = !agentConfigured; $('#sr-generate').textContent = 'Gerar relatório';
+      if (version !== scopeVersion) $('#sr-agent-status').textContent = 'Recorte alterado. Gere um novo relatório para a seleção atual.';
+    }
+  }
+
   async function init() {
     try {
       if (!['local', 'api'].includes(dataSource)) throw Error('Fonte de dados não reconhecida.');
@@ -392,6 +458,8 @@
       $('#sr-monthly-period').textContent = `12 meses até ${displayDate(data.reference)} · mês final parcial`;
       $('#sr-app').hidden = false; $('#sr-loading').hidden = true;
       populate(); render();
+      $('#sr-generate').addEventListener('click', generateReport);
+      initAgent();
       $('#sr-level').addEventListener('change', event => updateFilters('level', event.target.value));
       $('#sr-a').addEventListener('change', event => updateFilters('a', event.target.value));
       $('#sr-b').addEventListener('change', event => updateFilters('b', event.target.value));

@@ -19,3 +19,6 @@ body{margin:0;background:#f6f8fb;color-scheme:light;font-family:system-ui,sans-s
 #srag-design .chart-tooltip p{overflow-wrap:anywhere}
 #srag-design .chart .chart-cursor{stroke:var(--s-muted);stroke-dasharray:3 3;pointer-events:none}
 #srag-design .chart .chart-hit{fill:transparent;cursor:crosshair}
+#srag-design #sr-agent-result a{overflow-wrap:anywhere}
+#srag-design #sr-agent-section .panelhead{flex-wrap:wrap;gap:12px}
+#srag-design #sr-agent-status{margin:12px 0}

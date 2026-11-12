@@ -1,5 +1,14 @@
 # Registro AI-DLC
 
+## 12/11/2026 — U5 construída; gate de integração real pendente
+- Entrada: API em HML validada com 33 territórios, 48.866 casos e carga efetiva; Groq autenticada e modelo disponível após inclusão de User-Agent. Usuário autorizou continuar.
+- Construção: agente com três ferramentas fechadas, snapshot/territórios fixados, cliente Groq sem SDK, busca RSS, narrativa estruturada, relatório HTML/JSON com dois gráficos e volume de auditoria. Registro da escolha arquitetural em ADR-004.
+- Guardrails: sem SQL/URLs definidos pelo modelo; números determinísticos; validação de schema, tendências/referências e restrições de narrativa; limites de rodadas, contexto, simultaneidade e intervalo; modo parcial preserva dados em falha de quota. Não há prova semântica completa do texto.
+- Interface: geração explícita, seleção principal/comparação aplicada, resultados antigos ocultados e respostas em andamento descartadas quando o recorte muda. Prévia estática não usa chave nem habilita agente.
+- Validação local: 50 testes Python passaram. Browser com dublês passou geração, comparação, snapshot, dois gráficos, parcial, troca de filtro em andamento e 320px sem overflow; regressão de 47 cenários de filtros, tooltips, API e smoke passou, sem erros JavaScript. HTML do relatório e painel inspecionados visualmente. Sintaxe JavaScript e Compose com conexão fictícia validados. Evidências locais ignoradas pelo Git.
+- Consulta real aos feeds retornou cinco notícias recentes, sem erro de fonte. Groq e PostgreSQL não foram chamados nos testes locais do agente. A primeira geração real será validada pelo operador via check_agent_hml.py após rebuild ARM64.
+- Pendências: aceite da geração real em HML, diagrama conceitual em PDF e revisão final de entrega. Caddy e acesso externo não foram alterados.
+
 ## 12/11/2026 — API de leitura e frontend integrado preparados
 - Entrada: operador confirmou carga idempotente e permissões reader SELECT=true, INSERT/UPDATE/DELETE=false. Métricas do banco real correspondem ao CSV. Usuário autorizou avançar.
 - Implementados FastAPI/Uvicorn, consulta única de dashboard por snapshot, endpoints de métricas/séries e healthchecks. SQL parametrizado, leitura com timeout e erros sanitizados.

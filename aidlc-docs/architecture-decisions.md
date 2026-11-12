@@ -17,3 +17,13 @@ Preservar a base exigida de 2019. Separar data de carga e referência analítica
 
 ## Pendências operacionais
 Inventário somente leitura de containers, memória, CPU, disco, redes, configuração do proxy e estratégia de backup. Nenhum acesso à VM ou alteração de infraestrutura foi realizado. IPs, comandos de acesso e credenciais do documento de infraestrutura não serão copiados para o repositório público.
+
+## ADR-004 — Agente limitado e persistência de relatórios (12/11/2026)
+
+Decisão da Construction: implementar orquestrador Python com function calling Groq e três ferramentas fechadas, sem adicionar LangGraph nesta unidade. O fluxo tem escopo fixado, limites pequenos e validação explícita; não exige grafo durável ou banco vetorial. Isso substitui a preferência inicial por worker LangGraph; bibliotecas citadas nos pré-requisitos não são exigência de arquitetura do enunciado. A escolha reduz dependências na VM de um CPU e mantém eventos verificáveis por etapa. Migração para framework de grafo será reconsiderada se houver tarefas assíncronas duráveis, retomada ou múltiplos agentes.
+
+Narrativa estruturada é solicitada depois das ferramentas, pois a combinação de saída estruturada estrita e ferramentas não é suportada nesse modo da Groq. Tabelas/gráficos independem do texto gerado. Leitura SQL permanece parametrizada, restrita e fixada por snapshot; nenhum comando SQL pode ser criado pelo modelo. Notícias não confiáveis não definem ferramentas nem destinos de rede.
+
+JSON, HTML e auditoria JSONL ficam em volume privado, sem aumentar privilégios do reader PostgreSQL. Execução síncrona, uma geração simultânea e um worker atendem à PoC; não oferecem fila durável, cancelamento ou escala horizontal. Publicação externa exige autenticação, revisão de privacidade, backup e retenção do volume.
+
+Atualização operacional: inventário, carga idempotente, reader restrito e API real foram confirmados pelo operador em HML. Credencial Groq validada por listagem de modelos; isso não equivale a inferência LLM. Primeira geração real da U5 ainda pendente.

@@ -2,10 +2,13 @@
 import json
 from copy import deepcopy
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import uvicorn
 
 from srag.api import create_app
+from srag.report_store import ReportService, ReportStore
+from agent_fixtures import Client, News
 
 
 class FixtureRepository:
@@ -18,7 +21,8 @@ class FixtureRepository:
 
     def pin_snapshot(self):
         return {"snapshot_id": self.snapshot["snapshot_id"],
-                "loaded_at": self.snapshot["database_load"]["loaded_at"], "metadata": {}}
+                "loaded_at": self.snapshot["database_load"]["loaded_at"],
+                "metadata": {key: self.snapshot[key] for key in ("reference", "window_start", "source")}}
 
     def metrics(self, snapshot_id, territory):
         return self.snapshot["territories"][territory]["metrics"]
@@ -30,5 +34,8 @@ class FixtureRepository:
 if __name__ == "__main__":
     root = Path(__file__).resolve().parents[1]
     data = json.loads((root / "frontend/data/snapshot.json").read_text(encoding="utf-8"))
-    uvicorn.run(create_app(FixtureRepository(data), root / "frontend"),
-                host="127.0.0.1", port=8767, access_log=False)
+    repository = FixtureRepository(data)
+    with TemporaryDirectory(prefix="srag-preview-") as directory:
+        reports = ReportService(repository, ReportStore(Path(directory)), Client(), News())
+        uvicorn.run(create_app(repository, root / "frontend", reports),
+                    host="127.0.0.1", port=8767, access_log=False)

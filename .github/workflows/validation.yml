@@ -29,3 +29,4 @@ jobs:
           node --check tests/frontend-filters.cjs
           node --check tests/frontend-tooltips.cjs
           node --check tests/frontend-api.cjs
+          node --check tests/frontend-agent.cjs

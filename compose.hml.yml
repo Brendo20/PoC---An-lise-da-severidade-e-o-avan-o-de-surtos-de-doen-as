@@ -8,6 +8,11 @@ services:
       dockerfile: Dockerfile.api
     environment:
       SRAG_DATABASE_URL: ${SRAG_DATABASE_URL:?Configure SRAG_DATABASE_URL no .env}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-20b}
+      SRAG_REPORT_DIR: /var/lib/srag/reports
+    volumes:
+      - srag-reports:/var/lib/srag/reports
     ports:
       - "127.0.0.1:8766:8000"
     networks:
@@ -41,3 +46,6 @@ services:
 networks:
   portais-net:
     external: true
+
+volumes:
+  srag-reports:

@@ -30,3 +30,9 @@ Snapshot srag-ec77679e6022ca66-2019-12-28-v1.0.0 carregado em 12/11/2026 às 12:
 
 ## API preparada
 compose.hml.yml e Dockerfile.api acrescentam um único serviço que serve interface e consultas PostgreSQL por loopback 127.0.0.1:8766, com alias interno indicium-srag-hml-api. Usa apenas SRAG_DATABASE_URL, sem mounts de dados ou conexão loader. Build e healthcheck na VM ainda devem ser confirmados. Consulte o README para comandos. A implementação integrada substitui o arquivo estático por /api/dashboard quando o frontend é servido por esse serviço.
+
+## Atualização U5 — agente e notícias
+
+API confirmada pelo operador: readiness e dashboard usam o mesmo snapshot, 33 territórios e 48.866 casos. Chave Groq autenticada na listagem de modelos; inferência ainda não validada. Compose passa GROQ_API_KEY/GROQ_MODEL ao backend e acrescenta volume privado de relatórios; banco e carga existentes permanecem reutilizados.
+
+Executar os comandos da seção U5 do README, incluindo `python - < check_agent_hml.py` dentro do container via Compose. Não exibir `.env` nem configuração expandida. Não rodar `down -v`. A saída parcial exige revisão dos avisos; só marcar integração LLM aceita após geração completa. Nenhuma rota Caddy deve ser acrescentada nesta etapa.

@@ -9,6 +9,7 @@ COPY pyproject.toml README.md ./
 COPY src/ ./src/
 COPY sql/ ./sql/
 RUN python -m pip install --no-cache-dir -e ".[api]"
+RUN mkdir -p /var/lib/srag/reports && chown -R 10001:10001 /var/lib/srag && chmod 700 /var/lib/srag/reports
 COPY frontend/index.html frontend/app.js frontend/styles.css ./frontend/
 COPY frontend/assets/ ./frontend/assets/
 COPY frontend/vendor/ ./frontend/vendor/

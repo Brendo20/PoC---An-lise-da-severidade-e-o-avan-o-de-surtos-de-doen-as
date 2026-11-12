@@ -4,7 +4,7 @@ Repositório: [Brendo20 — PoC de análise de surtos](https://github.com/Brendo
 
 Projeto de relatórios epidemiológicos com ferramentas determinísticas e agente de IA, desenvolvido com AI-DLC.
 
-Status: dashboard validado; carga PostgreSQL e leitura restrita confirmadas em HML pelo operador. API e frontend integrado preparados para validação em HML. Agente LLM e notícias ainda não integrados.
+Status: dashboard, carga PostgreSQL e API confirmados em HML pelo operador. Agente Groq com ferramentas de banco, notícias e relatório implementado e validado localmente com dublês. Busca real de notícias validada; primeira geração real na Groq e build atualizado na VM ainda pendentes.
 
 ## Documentação
 - [Requisitos e critérios de aceite](aidlc-docs/inception.md)
@@ -60,9 +60,9 @@ Mapa, indicadores e gráficos usam arquivos locais, sem CDN ou dependência de r
 - Crescimento de 7 dias, letalidade entre desfechos conhecidos, proporção de internação em UTI e vacinação contra gripe entre casos com informação conhecida; séries reais de 30 dias e 12 meses, com mês final parcial sinalizado.
 - UTI e vacinação mostram numerador, denominador e percentual desconhecido. Não equivalem a ocupação operacional ou cobertura populacional, não calculáveis no escopo exclusivo do CSV.
 - Mapas e menus usam um estado único de filtros. Seleção principal/comparação atualiza cards, comparativos, gráficos, tabelas, legendas, resumo e qualidade do recorte. Os botões do mapa indicam qual território será alterado. A janela temporal é fixa e comum aos territórios; não há filtro de período nesta etapa.
-- Resumo determinístico, sem LLM ou notícias nesta etapa. Não representa o agente final solicitado no desafio.
+- A prévia estática apresenta resumo determinístico. No serviço API, um botão separado aciona o agente e gera relatório com números, dois gráficos e notícias, sem chamadas automáticas ao trocar filtros.
 - Contagens pequenas são suprimidas; proteção complementar contra inferência ainda pendente. **Snapshot restrito ao desenvolvimento local, ignorado pelo Git e não liberado para publicação.**
-- Sem recortes municipais, autenticação, carga PostgreSQL ou deploy nesta etapa.
+- Sem recortes municipais ou autenticação de aplicação; acesso restrito a HML. Carga PostgreSQL e API existentes confirmadas pelo operador.
 
 ### Validação do frontend
 
@@ -114,7 +114,7 @@ O serviço FastAPI disponibiliza frontend e dados na mesma origem. `/api/dashboa
 | `/api/metrics?territory=SP` | Indicadores do território com snapshot e data de carga |
 | `/api/series?territory=Norte` | Séries do território com snapshot e data de carga |
 
-Instalação de desenvolvimento: `python -m pip install -e ".[api,test]"`. Configure `SRAG_DATABASE_URL` no ambiente e execute `python -m uvicorn srag.api:app --host 127.0.0.1 --port 8766`. O arquivo `.env` não é carregado automaticamente pelo comando Python; Compose o utiliza para interpolar somente a conexão reader.
+Instalação de desenvolvimento: `python -m pip install -e ".[api,test]"`. Configure `SRAG_DATABASE_URL` no ambiente e execute `python -m uvicorn srag.api:app --host 127.0.0.1 --port 8766`. O arquivo `.env` não é carregado automaticamente pelo comando Python; Compose interpola a conexão reader e a configuração Groq.
 
 ### HML Oracle
 
@@ -128,7 +128,7 @@ docker compose -f compose.hml.yml ps
 curl --fail --silent --show-error http://127.0.0.1:8766/health/ready
 ```
 
-Não execute `docker compose config` sem `--quiet` para compartilhar saída: a configuração expandida contém a conexão. O build exclui `.env`, CSVs e snapshots. Não são necessários mounts de dados no serviço; ele usa o PostgreSQL já existente. Porta apenas em loopback, rede `portais-net`, 256 MiB e 0,5 CPU, sem root e filesystem somente leitura. Não altera Caddy. Após o build, confirme healthcheck e os números reais na VM antes de considerar implantação concluída.
+Não execute `docker compose config` sem `--quiet` para compartilhar saída: a configuração expandida contém segredos. O build exclui `.env`, CSVs e snapshots. A aplicação usa o PostgreSQL existente e um volume privado para relatórios/auditoria. Porta apenas em loopback, rede `portais-net`, 256 MiB e 0,5 CPU, sem root e filesystem somente leitura, exceto volume e tmpfs. Não altera Caddy. Após o build, confirme healthcheck e os números reais na VM antes de considerar implantação concluída.
 
 O serviço está interno, sem autenticação de aplicação nesta etapa. Não adicionar rota pública no Caddy antes de definir domínio e controle de acesso de HML. O snapshot continua sem liberação para divulgação pública.
 
@@ -141,3 +141,37 @@ Quando servido pela API, o HTML seleciona `/api/dashboard` e a interface mostra 
 Os testes Python usam `FastAPI TestClient` e repositório controlado. Para teste visual sem banco, `python tests/serve_api_fixture.py` serve uma fixture em memória em 127.0.0.1:8767. Ela não comprova conectividade com PostgreSQL. Nesse servidor, configure `SRAG_PREVIEW_URL=http://127.0.0.1:8767/` e execute os testes frontend existentes e `node tests/frontend-api.cjs`.
 
 Desenho e critérios: [U4 — API PostgreSQL](aidlc-docs/units/U4-postgres-api.md). Build ARM64 e teste HTTP contra o banco real dependem da execução pelo operador em HML.
+
+## Agente, notícias e relatório — U5
+
+O orquestrador executa function calling real com `openai/gpt-oss-20b`, servido pela Groq. As três ferramentas fechadas consultam métricas, séries e notícias; o modelo não recebe SQL livre, URLs para buscar ou dados individuais. O backend fixa o snapshot e até dois territórios compatíveis antes da execução. A saída final usa JSON Schema em chamada separada, conforme [tool calling da Groq](https://console.groq.com/docs/tool-use/local-tool-calling) e [structured outputs](https://console.groq.com/docs/structured-outputs).
+
+Números e gráficos são renderizados pelo backend. A validação confere estrutura, referências, tendências de crescimento e restrições da narrativa; isso **não prova a correção semântica de toda frase do LLM**. Texto inválido admite uma tentativa de correção; falha ou quota gera relatório parcial explícito, preservando indicadores. Máximo de três rodadas de ferramentas e duas tentativas de narrativa; timeout de 25 segundos por chamada e sem retentativas automáticas de quota.
+
+Os feeds públicos fixos do Ministério da Saúde e da Agência Fiocruz são consultados primeiro, com Google News RSS como descoberta complementar. São selecionadas até cinco matérias dos últimos trinta dias, por título/resumo, com fonte, publicação e horário de consulta. Não há leitura integral nem garantia de cobertura específica da UF. Notícias atuais e análise histórica ficam separadas, sem atribuição causal entre épocas. A busca depende da disponibilidade e do conteúdo dos feeds.
+
+Configuração privada no `.env` (não versionar nem compartilhar): `GROQ_API_KEY` e `GROQ_MODEL=openai/gpt-oss-20b`. Nenhuma chave vai para o frontend. O plano e as quotas disponíveis dependem da conta Groq; a aplicação limita uma geração simultânea, intervalo de um minuto e cache de relatório completo por cinco minutos. Cache e bloqueio são locais a um processo; manter **um worker e uma réplica** nesta PoC. Reinício remove cache/intervalo em memória, sem apagar arquivos persistidos.
+
+| Endpoint | Uso |
+|---|---|
+| `GET /api/agent/status` | Configuração habilitada, sem testar credencial nem consumir tokens |
+| `POST /api/reports` | JSON `{"territories":["Brasil"],"snapshot_id":"id-do-dashboard"}` |
+| `GET /api/reports/{id}` | Relatório JSON, fontes e eventos de auditoria |
+| `GET /api/reports/{id}/html` | Relatório independente, imprimível, com os dois gráficos |
+
+O volume Docker `srag-reports` guarda `report.json`, `report.html` e `audit.jsonl` por execução. Auditoria registra ferramentas, hash dos resultados, duração, uso de tokens, rejeições e decisões de validação. Não guarda raciocínio interno, prompts completos ou segredos. Arquivos ficam no diretório privado do usuário do container; endpoints ainda dependem do controle de acesso externo de HML. Não executar `down -v`: apaga volumes. Retenção, backup e autenticação precisam ser definidos antes de produção.
+
+Com a chave já protegida no `.env`, atualizar e validar **na VM**, na raiz do repositório:
+
+```bash
+git pull --ff-only
+docker compose -f compose.hml.yml config --quiet
+docker compose -f compose.hml.yml up -d --build --wait --wait-timeout 120 api
+docker compose -f compose.hml.yml exec -T api python - < check_agent_hml.py
+```
+
+O último comando realiza uma geração real e consome a quota disponível; imprime somente diagnóstico sanitizado. Aceite: `status=complete`, narrativa validada, notícias presentes e conferência das métricas/duas séries com o dashboard. Relatório parcial não encerra o gate da integração LLM. Não é necessário recarregar a base ou recriar o banco.
+
+Testes locais: suíte Python e `tests/frontend-agent.cjs` usam dublês de Groq/banco/notícias. O servidor `tests/serve_api_fixture.py` habilita essa simulação explicitamente. Executar o teste de navegador não atesta acesso real aos provedores. Desenho e critérios AI-DLC: [U5 — agente e relatórios](aidlc-docs/units/U5-agent-reports.md).
+
+Pendências da entrega: teste real do agente em HML, diagrama conceitual em PDF, revisão final do README e evidências de aceite. Ocupação operacional de UTI, cobertura vacinal e mortalidade populacionais permanecem não calculáveis pelo CSV exclusivo; proxies estão identificados e não substituem essas definições.

@@ -2,22 +2,33 @@
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, ConfigDict, Field
 
 from srag.database import PostgresRepository, TERRITORIES
+from srag.report_store import ReportError, ReportService, ReportStore
 
 LOGGER = logging.getLogger("srag.api")
 FRONTEND = Path(__file__).resolve().parents[2] / "frontend"
 
 
-def create_app(repository=None, frontend: Path | None = FRONTEND) -> FastAPI:
+class ReportRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    territories: list[str] = Field(min_length=1, max_length=2)
+    snapshot_id: str = Field(min_length=1, max_length=160)
+
+
+def create_app(repository=None, frontend: Path | None = FRONTEND, report_service=None) -> FastAPI:
     application = FastAPI(title="SRAG 2019", docs_url=None, redoc_url=None, openapi_url=None)
     repository = repository if repository is not None else PostgresRepository()
+    reports = report_service if report_service is not None else ReportService(
+        repository, ReportStore(Path(os.environ.get("SRAG_REPORT_DIR", "reports/generated"))))
 
     @application.middleware("http")
     async def headers(request: Request, call_next):
@@ -73,6 +84,37 @@ def create_app(repository=None, frontend: Path | None = FRONTEND) -> FastAPI:
         result = call(lambda: repository.series(snapshot["snapshot_id"], territory))
         return {"snapshot_id": snapshot["snapshot_id"], "loaded_at": snapshot["loaded_at"],
                 "territory": territory, **result}
+
+    @application.get("/api/agent/status")
+    def agent_status():
+        return reports.status()
+
+    @application.post("/api/reports")
+    def generate_report(body: ReportRequest):
+        try:
+            return reports.generate(body.territories, body.snapshot_id)
+        except ReportError as error:
+            raise HTTPException(status_code=error.status, detail=error.code,
+                                headers={"Retry-After": "60"} if error.status == 429 else None) from None
+        except Exception as error:
+            LOGGER.warning("report_failed error_type=%s", type(error).__name__)
+            raise HTTPException(status_code=503, detail="report_generation_unavailable") from None
+
+    @application.get("/api/reports/{identifier}")
+    def read_report(identifier: str):
+        try:
+            return reports.store.read(identifier)
+        except FileNotFoundError:
+            raise HTTPException(status_code=404, detail="report_not_found") from None
+
+    @application.get("/api/reports/{identifier}/html", response_class=HTMLResponse)
+    def report_html(identifier: str):
+        try:
+            result = reports.store.html(identifier)
+        except FileNotFoundError:
+            raise HTTPException(status_code=404, detail="report_not_found") from None
+        return HTMLResponse(result, headers={"Content-Security-Policy":
+            "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"})
 
     if frontend is not None and frontend.is_dir():
         @application.get("/", response_class=HTMLResponse)
