@@ -1,4 +1,5 @@
 import json
+import re
 import tempfile
 from copy import deepcopy
 from pathlib import Path
@@ -7,7 +8,7 @@ from unittest import TestCase
 from fastapi.testclient import TestClient
 
 from agent_fixtures import Client, News, Repository
-from srag.agent import AnalysisValidationError, ReportAgent, validate_analysis, validation_diagnostic
+from srag.agent import AnalysisValidationError, ReportAgent, output_schema, validate_analysis, validation_diagnostic
 from srag.api import create_app
 from srag.groq_client import ProviderError
 from srag.report_store import ReportError, ReportService, ReportStore
@@ -218,3 +219,14 @@ class ReportTests(TestCase):
         result = validation_diagnostic(ValueError('private-key detail'))
         self.assertEqual(result, {'reason': 'invalid_response', 'field': None})
         self.assertNotIn('private-key', str(result))
+
+    def test_schema_constrains_comment_numbers_without_blocking_reference_ids(self):
+        schema = output_schema(['Brasil'])
+        for field in ('historical_commentary', 'current_commentary'):
+            pattern = schema['properties'][field]['pattern']
+            for value in ('Dados do período histórico.', 'Síntese atual de SRAG.', ''):
+                self.assertIsNotNone(re.fullmatch(pattern, value))
+            for value in ('No ano de 2019', 'COVID-19', 'Taxa de 10%', '<b>Texto</b>', 'news-123'):
+                self.assertIsNone(re.fullmatch(pattern, value))
+        self.assertNotIn('pattern', schema['properties']['cited_news_ids']['items'])
+        self.assertEqual(schema['properties']['growth_trends']['items']['properties']['territory']['enum'], ['Brasil'])

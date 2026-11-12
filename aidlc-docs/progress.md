@@ -1,5 +1,11 @@
 # Registro AI-DLC
 
+## 12/11/2026 — Rejeição localizada em números do comentário atual
+- Operador confirmou v5, três ferramentas concluídas e nenhum erro de provedor. As duas tentativas de redação foram rejeitadas por narrative_numbers em current_commentary no relatório 07c95c16a460495f80819ad8a9c18acd. Não é possível determinar o número ou trecho exato, pois o rascunho não foi persistido.
+- v6 adiciona pattern sem algarismos/percentuais/marcação apenas aos dois campos de comentário, mantendo validação local e referências em campo separado. Não remove texto numerado após geração nem aceita uma saída reprovada.
+- Preparada sondagem por stdin com uma única chamada de redação e evidências salvas, sem rebuild ou repetição das ferramentas. Não altera o relatório original. Compatibilidade/aderência real do schema e geração completa continuam pendentes.
+- 58 testes Python passaram, incluindo padrão de comentários e preservação de IDs/regras de tendências. Regex local não comprova suporte ou aderência do provedor; sondagem real é necessária antes do deploy desta revisão.
+
 ## 12/11/2026 — Resposta real recebida; rejeição textual exige diagnóstico específico
 - Operador confirmou v4 com três ferramentas concluídas e nenhuma falha HTTP; relatório parcial bdf99fa78e234811999902f412a262e7 ficou sem narrativa. Diagnóstico apenas de redação com evidências salvas retornou unverified_narrative_claim.
 - O código anterior agrupava números, marcação, credenciais, termos de eficácia e causalidade. Não permite determinar retroativamente a categoria específica. Separados códigos e campo do comentário; mantidos os mesmos padrões de bloqueio, inclusive em negações.
