@@ -4,7 +4,7 @@ Repositório: [Brendo20 — PoC de análise de surtos](https://github.com/Brendo
 
 Projeto de relatórios epidemiológicos com ferramentas determinísticas e agente de IA, desenvolvido com AI-DLC.
 
-Status: etapa 1 do dashboard concluída e validada, com indicadores revisados e filtros sincronizados. Ainda não há carga PostgreSQL, agente LLM ou implantação.
+Status: dashboard validado; carga PostgreSQL e leitura restrita confirmadas em HML pelo operador. API e frontend integrado preparados para validação em HML. Agente LLM e notícias ainda não integrados.
 
 ## Documentação
 - [Requisitos e critérios de aceite](aidlc-docs/inception.md)
@@ -19,10 +19,11 @@ GitHub Actions executa os testes Python com dados sintéticos e confere a sintax
 
 ## Diagnóstico reproduzível (Python 3.11+)
 
-Não há dependências externas para esta etapa. Na raiz do projeto, em PowerShell:
+O profiler usa apenas a biblioteca padrão. A suíte completa inclui testes HTTP e requer os extras de API e teste. Na raiz do projeto, em PowerShell:
 
 ```powershell
 $env:PYTHONPATH = "src"
+python -m pip install -e ".[api,test]"
 python -m unittest discover -s tests -v
 python -m srag.profile "CAMINHO/INFLUD19-23-03-2026.csv" --as-of 2026-11-10 --source-url "https://dadosabertos.saude.gov.br/dataset/srag-2019-a-2026/resource/d96d6348-083a-4184-a39a-794b5e8ec337" --output reports/data-profile-2019.json
 ```
@@ -99,4 +100,44 @@ python -m srag.database status
 
 A migração cria o schema `srag` apenas no banco apontado pela conexão. Os GRANTs de leitura estão comentados no SQL e devem ser aplicados ao login exclusivo correto pelo administrador. A carga usa transação, preserva snapshots anteriores e só promove uma carga completa; repetição de conteúdo idêntico mantém a data de carga original. Conteúdo diferente com mesmo identificador é rejeitado.
 
-**Estado atual:** camada PostgreSQL preparada, mas migração e carga reais ainda não executadas. A conexão do projeto não está configurada. Testes unitários com conexão controlada não substituem testes de integração no PostgreSQL.
+**Estado confirmado em HML pelo operador:** migração 001, carga ativa e repetição idempotente validadas; reader com SELECT=true e INSERT/UPDATE/DELETE=false. Snapshot `srag-ec77679e6022ca66-2019-12-28-v1.0.0`, carga em 12/11/2026 às 12:45:32 UTC (09:45:32 em Brasília).
+
+## API e dashboard integrado
+
+O serviço FastAPI disponibiliza frontend e dados na mesma origem. `/api/dashboard` consulta os 33 territórios em uma única instrução SQL, mantendo a mesma carga em toda a tela. Os filtros continuam locais e instantâneos sobre esse resultado. A API não recebe a conexão loader nem permite SQL livre.
+
+| Endpoint | Finalidade |
+|---|---|
+| `/health/live` | Processo em execução |
+| `/health/ready` | Carga ativa acessível no PostgreSQL |
+| `/api/dashboard` | Metadados, carga efetiva, métricas e séries dos territórios |
+| `/api/metrics?territory=SP` | Indicadores do território com snapshot e data de carga |
+| `/api/series?territory=Norte` | Séries do território com snapshot e data de carga |
+
+Instalação de desenvolvimento: `python -m pip install -e ".[api,test]"`. Configure `SRAG_DATABASE_URL` no ambiente e execute `python -m uvicorn srag.api:app --host 127.0.0.1 --port 8766`. O arquivo `.env` não é carregado automaticamente pelo comando Python; Compose o utiliza para interpolar somente a conexão reader.
+
+### HML Oracle
+
+Na raiz do checkout da VM, com `.env` protegido e carga já validada:
+
+```bash
+git pull --ff-only
+docker compose -f compose.hml.yml config --quiet
+docker compose -f compose.hml.yml up -d --build api
+docker compose -f compose.hml.yml ps
+curl --fail --silent --show-error http://127.0.0.1:8766/health/ready
+```
+
+Não execute `docker compose config` sem `--quiet` para compartilhar saída: a configuração expandida contém a conexão. O build exclui `.env`, CSVs e snapshots. Não são necessários mounts de dados no serviço; ele usa o PostgreSQL já existente. Porta apenas em loopback, rede `portais-net`, 256 MiB e 0,5 CPU, sem root e filesystem somente leitura. Não altera Caddy. Após o build, confirme healthcheck e os números reais na VM antes de considerar implantação concluída.
+
+O serviço está interno, sem autenticação de aplicação nesta etapa. Não adicionar rota pública no Caddy antes de definir domínio e controle de acesso de HML. O snapshot continua sem liberação para divulgação pública.
+
+### Origem e falhas
+
+Quando servido pela API, o HTML seleciona `/api/dashboard` e a interface mostra a data efetiva da carga. Falhas da API não recorrem ao snapshot do disco. A API bloqueia `/data/snapshot.json`, `.env`, SQL e código-fonte. A prévia estática anterior continua disponível por `http.server`, claramente em modo local, sem sugerir consulta ao banco.
+
+### Testes da integração HTTP
+
+Os testes Python usam `FastAPI TestClient` e repositório controlado. Para teste visual sem banco, `python tests/serve_api_fixture.py` serve uma fixture em memória em 127.0.0.1:8767. Ela não comprova conectividade com PostgreSQL. Nesse servidor, configure `SRAG_PREVIEW_URL=http://127.0.0.1:8767/` e execute os testes frontend existentes e `node tests/frontend-api.cjs`.
+
+Desenho e critérios: [U4 — API PostgreSQL](aidlc-docs/units/U4-postgres-api.md). Build ARM64 e teste HTTP contra o banco real dependem da execução pelo operador em HML.

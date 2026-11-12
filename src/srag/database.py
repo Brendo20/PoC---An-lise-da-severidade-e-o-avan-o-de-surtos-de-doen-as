@@ -100,6 +100,31 @@ class PostgresRepository:
     def __init__(self, connection_factory=None):
         self.connection_factory = connection_factory or (lambda: connect("SRAG_DATABASE_URL"))
 
+    def dashboard(self) -> dict:
+        """Uma instrução SELECT fixa a carga ativa para todo o dashboard."""
+        with self.connection_factory() as connection:
+            connection.execute("SET TRANSACTION READ ONLY")
+            connection.execute("SET LOCAL statement_timeout = '5s'")
+            rows = connection.execute(
+                """SELECT s.snapshot_id, s.loaded_at, s.metadata, t.territory, t.document
+                   FROM srag.active_snapshot a
+                   JOIN srag.snapshots s ON s.snapshot_id = a.snapshot_id
+                   JOIN srag.territory_aggregates t ON t.snapshot_id = s.snapshot_id
+                   WHERE a.singleton = true ORDER BY t.territory"""
+            ).fetchall()
+        if not rows:
+            raise LookupError("Nenhuma carga ativa disponível")
+        if len(rows) != len(TERRITORIES) or {row[3] for row in rows} != TERRITORIES:
+            raise LookupError("Carga incompleta: territórios esperados não encontrados")
+        first = rows[0]
+        if any(row[0] != first[0] for row in rows):
+            raise LookupError("Resposta contém versões diferentes de carga")
+        result = deepcopy(first[2])
+        result["snapshot_id"] = first[0]
+        result["database_load"] = {"status": "loaded", "loaded_at": first[1].isoformat()}
+        result["territories"] = {row[3]: row[4] for row in rows}
+        return result
+
     def pin_snapshot(self) -> dict:
         with self.connection_factory() as connection:
             connection.execute("SET TRANSACTION READ ONLY")

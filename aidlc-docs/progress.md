@@ -1,5 +1,15 @@
 # Registro AI-DLC
 
+## 12/11/2026 — API de leitura e frontend integrado preparados
+- Entrada: operador confirmou carga idempotente e permissões reader SELECT=true, INSERT/UPDATE/DELETE=false. Métricas do banco real correspondem ao CSV. Usuário autorizou avançar.
+- Implementados FastAPI/Uvicorn, consulta única de dashboard por snapshot, endpoints de métricas/séries e healthchecks. SQL parametrizado, leitura com timeout e erros sanitizados.
+- Frontend servido pela API consulta /api/dashboard e mostra loaded_at efetivo; falha não aciona fallback para arquivo local. Prévia estática permanece em modo local explícito.
+- Dockerfile.api e Compose HML: apenas conexão reader, 256 MiB, 0,5 CPU, sem root, filesystem somente leitura, logs limitados, healthcheck; porta vinculada a 127.0.0.1:8766 e rede portais-net existente. Nenhuma configuração do Caddy alterada.
+- Validação local: 32 testes Python, sintaxe JavaScript e Compose com DSN fictício passaram. Testes HTTP com repositório controlado, sem acesso ao banco da VM.
+- Navegador em modo API com fixture em memória: data de carga, bloqueio de snapshot local, falha sem fallback, 47 cenários de filtros, tooltips e smoke test passaram. Zero erros JavaScript. Prévia visual inspecionada; servidor de fixture encerrado.
+- Evidências locais ignoradas pelo Git: reports/frontend-api.json, reports/frontend-filters.json, reports/frontend-tooltips.json e reports/frontend-smoke.json. Não constituem teste de API contra PostgreSQL real.
+- Próximo gate: operador executar build ARM64 e validar serviço HTTP com PostgreSQL em HML. Agente LLM e notícias continuam pendentes.
+
 ## 12/11/2026 — Migração HML confirmada pelo operador
 - Operador confirmou .env com modo 600 e ignorado pelo Git, migração 001 aplicada no banco exclusivo e zero snapshots.
 - Preparado Dockerfile.tools com contexto de build em allowlist, downloader com hash fixado e runbook de carga inicial.

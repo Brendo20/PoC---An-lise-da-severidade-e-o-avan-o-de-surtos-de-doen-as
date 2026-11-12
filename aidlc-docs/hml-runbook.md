@@ -24,3 +24,9 @@ Hash do CSV igual ao arquivo auditado; 48.941 registros lidos, 48.866 no recorte
 
 ## Limites
 Este procedimento carrega agregações, não dados individuais. O snapshot original mantém database_load=not_loaded; a fonte de verdade para a carga SQL é o banco, consultado por status. A interface estática ainda não é integrada ao banco. Base e snapshot são restritos a HML, sem liberação pública automática.
+
+## Resultado da carga confirmado pelo operador
+Snapshot srag-ec77679e6022ca66-2019-12-28-v1.0.0 carregado em 12/11/2026 às 12:45:32.573171 UTC. Repetição retornou already_loaded sem alterar loaded_at. Reader confirmou SELECT=true e INSERT/UPDATE/DELETE=false; métricas Brasil conciliadas: 48.866 casos, crescimento -11,7647%, letalidade 12,1349%, UTI entre casos 36,9304%, vacinação entre casos 32,0824%.
+
+## API preparada
+compose.hml.yml e Dockerfile.api acrescentam um único serviço que serve interface e consultas PostgreSQL por loopback 127.0.0.1:8766, com alias interno indicium-srag-hml-api. Usa apenas SRAG_DATABASE_URL, sem mounts de dados ou conexão loader. Build e healthcheck na VM ainda devem ser confirmados. Consulte o README para comandos. A implementação integrada substitui o arquivo estático por /api/dashboard quando o frontend é servido por esse serviço.

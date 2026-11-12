@@ -81,3 +81,26 @@ class DatabaseTests(TestCase):
         calls = [call.args[0] for call in connection.execute.call_args_list]
         self.assertFalse(any("INSERT INTO srag.territory_aggregates" in sql for sql in calls))
         self.assertTrue(any("INSERT INTO srag.active_snapshot" in sql for sql in calls))
+
+    def test_dashboard_reads_all_territories_from_one_snapshot(self):
+        data = snapshot()
+        metadata = {key: value for key, value in data.items() if key != "territories"}
+        original_time = datetime(2026, 11, 12, 12, 45, tzinfo=timezone.utc)
+        rows = [(data["snapshot_id"], original_time, metadata, key, document)
+                for key, document in data["territories"].items()]
+        connection = MagicMock()
+        connection.execute.return_value.fetchall.return_value = rows
+        repository = PostgresRepository(lambda: nullcontext(connection))
+        result = repository.dashboard()
+        self.assertEqual(set(result["territories"]), TERRITORIES)
+        self.assertEqual(result["database_load"], {"status": "loaded", "loaded_at": original_time.isoformat()})
+        self.assertIsNone(metadata["database_load"]["loaded_at"])
+        self.assertEqual(len(connection.execute.call_args_list), 3)
+
+    def test_incomplete_dashboard_is_not_served(self):
+        connection = MagicMock()
+        connection.execute.return_value.fetchall.return_value = [
+            ("id", datetime.now(timezone.utc), {}, "Brasil", {})]
+        repository = PostgresRepository(lambda: nullcontext(connection))
+        with self.assertRaisesRegex(LookupError, "incompleta"):
+            repository.dashboard()

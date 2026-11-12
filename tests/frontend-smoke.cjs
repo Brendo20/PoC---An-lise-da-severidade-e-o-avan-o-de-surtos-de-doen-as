@@ -52,6 +52,7 @@ const url = process.env.SRAG_PREVIEW_URL || 'http://127.0.0.1:8765/';
     await page.locator('#sr-map path[data-uf="SP"]').click();
     assert(await page.locator('#sr-a').inputValue() === 'SP', 'map pointer selection');
     await page.route('**/data/snapshot.json', route => route.fulfill({ status: 404, body: 'not found' }));
+    await page.route('**/api/dashboard', route => route.fulfill({ status: 503, body: 'unavailable' }));
     await page.reload({ waitUntil: 'networkidle' });
     assert(await page.locator('[role="alert"]').isVisible(), 'missing load failure state');
     assert(!await page.locator('#sr-app').isVisible(), 'stale dashboard visible after failure');

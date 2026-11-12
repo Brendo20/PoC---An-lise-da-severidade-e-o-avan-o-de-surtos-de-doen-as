@@ -1,0 +1,43 @@
+name: indicium-srag-hml
+
+services:
+  api:
+    image: indicium-srag-api:hml
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      SRAG_DATABASE_URL: ${SRAG_DATABASE_URL:?Configure SRAG_DATABASE_URL no .env}
+    ports:
+      - "127.0.0.1:8766:8000"
+    networks:
+      portais-net:
+        aliases:
+          - indicium-srag-hml-api
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,noexec,size=32m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    cpus: 0.50
+    pids_limit: 64
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=10)"]
+      interval: 30s
+      timeout: 12s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+networks:
+  portais-net:
+    external: true

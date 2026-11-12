@@ -5,6 +5,7 @@
   const root = document.getElementById('srag-design');
   const $ = selector => root.querySelector(selector);
   const state = { level: 'state', a: 'Brasil', b: '', target: 'a' };
+  const dataSource = document.querySelector('meta[name="srag-data-source"]')?.content || 'local';
   const int = new Intl.NumberFormat('pt-BR');
   const decimal = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
   const dateFormat = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' });
@@ -13,6 +14,9 @@
   let geometry;
   let resizeTimer;
   const displayDate = text => dateFormat.format(new Date(text + 'T00:00:00Z'));
+  const displayTimestamp = text => new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo',
+  }).format(new Date(text));
   const name = id => data.states.find(item => item.id === id)?.name || id;
   const selected = () => [state.a, ...(state.b ? [state.b] : [])];
   const metric = (id, key) => data.territories[id].metrics[key];
@@ -308,12 +312,15 @@
 
   function renderAudit() {
     const audit = $('#sr-audit-body');
-    const generated = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(data.generated_at));
+    const generated = displayTimestamp(data.generated_at);
+    const load = data.database_load;
     audit.replaceChildren();
     const link = element('a', '', 'Fonte: Open DATASUS · SIVEP-Gripe 2019');
     link.href = data.source.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; audit.append(link);
     [
-      `Snapshot gerado em ${generated} (São Paulo). Carga PostgreSQL: não realizada.`,
+      `Snapshot gerado em ${generated} (São Paulo). ${load?.status === 'loaded'
+        ? 'Carga PostgreSQL realizada em ' + displayTimestamp(load.loaded_at) + ' (São Paulo).'
+        : 'Prévia local: sem consulta ao banco nesta execução.'}`,
       `Origem: ${data.source.filename}. SHA-256: ${data.source.sha256}.`,
       `Referência analítica: ${displayDate(data.reference)}. Cobertura declarada: ${displayDate(data.coverage.start)} a ${displayDate(data.coverage.end)}. Cobertura declarada não garante completude das notificações.`,
       `Arquivo original: ${int.format(data.audit.input_rows)} linhas; janela nacional: ${int.format(data.audit.cases_in_window)} registros. Estes totais descrevem a origem, não o filtro territorial. Casos sem UF reconhecida no arquivo: ${int.format(data.audit.issues.unknown_residence_uf || 0)}, incluídos no Brasil.`,
@@ -361,13 +368,24 @@
 
   async function init() {
     try {
-      [data, geometry] = await Promise.all([loadJson('data/snapshot.json'), loadJson('assets/brazil-states.geojson')]);
+      if (!['local', 'api'].includes(dataSource)) throw Error('Fonte de dados não reconhecida.');
+      // Modo definido no HTML pelo servidor. Não há fallback de API para arquivo antigo.
+      const endpoint = dataSource === 'api' ? 'api/dashboard' : 'data/snapshot.json';
+      [data, geometry] = await Promise.all([loadJson(endpoint), loadJson('assets/brazil-states.geojson')]);
       if (data.schema_version !== '1.0.0' || !data.territories?.Brasil || geometry.features?.length !== 27 || !window.d3) throw Error('Dados ou biblioteca incompatíveis. Gere novamente o snapshot e confira os arquivos locais.');
+      if (dataSource === 'api' && (data.database_load?.status !== 'loaded' || !data.database_load.loaded_at)) {
+        throw Error('A API não informou uma carga válida.');
+      }
       for (const feature of geometry.features) {
         const polygons = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates;
         for (const coordinates of polygons) if (d3.geoArea({ type: 'Polygon', coordinates }) > 2 * Math.PI) coordinates.forEach(ring => ring.reverse());
       }
-      $('#sr-reference').textContent = `Base histórica · referência em ${displayDate(data.reference)} · sem carga no banco`;
+      const loadLabel = dataSource === 'api'
+        ? 'última carga em ' + displayTimestamp(data.database_load.loaded_at) + ' (Brasília)'
+        : 'prévia local';
+      $('#sr-reference').textContent = `Base histórica · referência em ${displayDate(data.reference)} · ${loadLabel}`;
+      root.querySelector('.top .badge').textContent = dataSource === 'api' ? 'Dados reais · HML' : 'Dados reais · uso local';
+      root.dataset.dataSource = dataSource;
       $('#sr-period').textContent = `Período comum · ${displayDate(data.window_start)} a ${displayDate(data.reference)}`;
       const daily = data.territories.Brasil.daily;
       $('#sr-daily-period').textContent = `${displayDate(daily[0].date)} — ${displayDate(data.reference)} · registros reais`;
@@ -387,7 +405,10 @@
     } catch (error) {
       $('#sr-app').hidden = true;
       const status = $('#sr-loading'); status.hidden = false; status.className = 'loading fatal'; status.setAttribute('role', 'alert');
-      status.replaceChildren(element('strong', '', 'Não foi possível carregar o dashboard.'), element('p', '', error.message), element('p', 'small', 'Gere o snapshot conforme o README e abra a aplicação por um servidor HTTP local.'));
+      status.replaceChildren(element('strong', '', 'Não foi possível carregar o dashboard.'), element('p', '', error.message),
+        element('p', 'small', dataSource === 'api'
+          ? 'Confira o serviço e a carga no banco. Dados antigos não serão exibidos como atuais.'
+          : 'Gere o snapshot conforme o README e abra a aplicação por um servidor HTTP local.'));
     }
   }
   init();
