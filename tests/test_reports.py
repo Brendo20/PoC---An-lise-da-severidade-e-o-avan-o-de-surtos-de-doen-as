@@ -7,7 +7,7 @@ from unittest import TestCase
 from fastapi.testclient import TestClient
 
 from agent_fixtures import Client, News, Repository
-from srag.agent import ReportAgent, validate_analysis
+from srag.agent import AnalysisValidationError, ReportAgent, validate_analysis, validation_diagnostic
 from srag.api import create_app
 from srag.groq_client import ProviderError
 from srag.report_store import ReportError, ReportService, ReportStore
@@ -169,3 +169,52 @@ class ReportTests(TestCase):
             self.repository.pin_snapshot(), ['Brasil'], lambda *args, **kwargs: None)
         self.assertEqual(report['status'], 'partial')
         self.assertIn('recent_news_unavailable', report['warnings'])
+
+    def test_text_rejections_identify_field_and_keep_existing_blocks(self):
+        report = self.generate()
+        for text, code in [
+            ('No ano de 2019', 'narrative_numbers'),
+            ('Taxa de dez %', 'narrative_numbers'),
+            ('Veja https://example.org', 'narrative_markup_or_url'),
+            ('<b>Exemplo</b>', 'narrative_markup_or_url'),
+            ('gsk_fixture', 'narrative_credential_pattern'),
+            ('sk-proj-fixture', 'narrative_credential_pattern'),
+            ('Não podemos inferir eficácia.', 'narrative_efficacy_terms'),
+            ('Não foi causado por isso.', 'narrative_causal_terms'),
+            ('Não é devido à vacinação.', 'narrative_causal_terms')
+        ]:
+            draft = deepcopy(report['analysis'])
+            draft['current_commentary'] = text
+            with self.assertRaises(AnalysisValidationError) as error:
+                validate_analysis(draft, report['metrics'], report['news'])
+            self.assertEqual(validation_diagnostic(error.exception), {'reason': code, 'field': 'current_commentary'})
+
+    def test_targeted_repair_receives_rejected_draft_without_persisting_it(self):
+        class Repairable(Client):
+            def complete(self, messages, **kwargs):
+                result = super().complete(messages, **kwargs)
+                if kwargs.get('schema') and len(self.calls) == 4:
+                    draft = json.loads(result['message']['content'])
+                    draft['historical_commentary'] = 'Não podemos inferir eficácia.'
+                    result['message']['content'] = json.dumps(draft)
+                return result
+        client = Repairable()
+        service = ReportService(self.repository, self.store, client, self.news)
+        report = service.generate(['Brasil'], 'fixture')
+        self.assertEqual(report['status'], 'complete')
+        self.assertEqual(len(client.calls), 5)
+        repair = client.calls[-1]['messages']
+        self.assertEqual(repair[-2]['role'], 'assistant')
+        self.assertIn('narrative_efficacy_terms', repair[-1]['content'])
+        self.assertIn('historical_commentary', repair[-1]['content'])
+        event = next(event for event in report['audit'] if event['event'] == 'narrative_rejected')
+        self.assertEqual(event['reason'], 'narrative_efficacy_terms')
+        self.assertEqual(event['field'], 'historical_commentary')
+        for filename in ('report.json', 'report.html', 'audit.jsonl'):
+            content = (self.store.folder(report['report_id']) / filename).read_text(encoding='utf-8')
+            self.assertNotIn('Não podemos inferir eficácia.', content)
+
+    def test_validation_diagnostic_does_not_expose_unknown_exception_text(self):
+        result = validation_diagnostic(ValueError('private-key detail'))
+        self.assertEqual(result, {'reason': 'invalid_response', 'field': None})
+        self.assertNotIn('private-key', str(result))

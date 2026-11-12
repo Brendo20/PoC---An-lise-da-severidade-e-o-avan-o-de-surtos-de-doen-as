@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 from srag.groq_client import ProviderError
 
-PROMPT_VERSION = "srag-2019-v4-compact"
+PROMPT_VERSION = "srag-2019-v5-targeted-repair"
 TOOL_DESCRIPTIONS = {
     "consultar_metricas": "Consultar indicadores agregados dos territórios já selecionados e da carga fixada.",
     "consultar_series": "Consultar séries de trinta dias e doze meses dos territórios selecionados.",
@@ -33,6 +33,55 @@ current_commentary descreve somente os títulos/resumos atuais, com suas limita�
 notícias, use texto vazio e cited_news_ids vazio. growth_trends deve refletir a taxa consultada:
 increase se positiva, decrease se negativa, stable se zero, unavailable se não disponível.
 Não invente valores ausentes ou fontes. Não declare leitura integral das matérias."""
+NARRATIVE_SYSTEM += """
+Nos dois campos de comentário, não use anos, datas, números de boletins, percentuais ou
+nomes de doenças com algarismos. Use expressões como período histórico ou cenário atual.
+Não use os termos eficácia, efetividade, causado, causada, provocado, provocada ou devido a,
+mesmo para negar uma relação ou escrever uma ressalva. Descreva apenas limitações das
+informações. Deixe identificadores de notícias exclusivamente em cited_news_ids.
+Seja breve: um parágrafo por comentário."""
+
+TEXT_RULES = (
+    ("narrative_numbers", r"\d|%"),
+    ("narrative_markup_or_url", r"https?://|[<>]"),
+    ("narrative_credential_pattern", r"gsk_|sk-proj-"),
+    ("narrative_efficacy_terms", r"efic[aá]cia|efetividade"),
+    ("narrative_causal_terms", r"causad[oa]|provocad[oa]|devido [aà]"),
+)
+REPAIR_HINTS = {
+    "narrative_numbers": "Remova todos os algarismos e percentuais do comentário, inclusive anos, datas, boletins e nomes de doenças. Use período histórico ou cenário atual.",
+    "narrative_markup_or_url": "Remova HTML, sinais de marcação e links. Use apenas texto simples; IDs de fontes ficam em cited_news_ids.",
+    "narrative_credential_pattern": "Remova qualquer padrão de credencial. Não mencione chaves nem segredos.",
+    "narrative_efficacy_terms": "Não use as palavras eficácia ou efetividade, nem em frases negativas. Descreva apenas limitações das informações.",
+    "narrative_causal_terms": "Não use causado, causada, provocado, provocada ou devido a, nem em frases negativas. Descreva observações sem atribuir causas.",
+    "analysis_shape": "Use exatamente as propriedades obrigatórias do JSON Schema.",
+    "narrative_size": "Cada comentário deve ser texto breve com no máximo mil e oitocentos caracteres.",
+    "empty_historical_commentary": "Preencha historical_commentary com uma observação qualitativa do recorte.",
+    "unknown_news_reference": "Use somente IDs das notícias fornecidas em cited_news_ids.",
+    "news_without_evidence": "Referencie o comentário atual com os IDs das notícias utilizadas.",
+    "empty_current_commentary": "Preencha current_commentary usando os títulos e resumos disponíveis.",
+    "news_unavailable": "Sem notícias, current_commentary e cited_news_ids devem ficar vazios.",
+    "trend_count": "Inclua uma tendência para cada território selecionado.",
+    "trend_shape": "Use territory e trend, sem territórios repetidos.",
+    "trend_mismatch": "Confira growth: valor positivo increase, negativo decrease, zero stable e status não disponível unavailable.",
+    "invalid_json": "Retorne somente JSON válido conforme o schema, sem texto ou cercas de código.",
+    "invalid_response": "Confira tipos e campos do JSON Schema e as evidências fornecidas.",
+}
+
+
+class AnalysisValidationError(ValueError):
+    def __init__(self, code: str, field: str):
+        super().__init__(code)
+        self.code, self.field = code, field
+
+
+def validation_diagnostic(error: Exception) -> dict:
+    if isinstance(error, AnalysisValidationError):
+        return {"reason": error.code, "field": error.field}
+    if isinstance(error, json.JSONDecodeError):
+        return {"reason": "invalid_json", "field": None}
+    code = str(error)
+    return {"reason": code if code in REPAIR_HINTS else "invalid_response", "field": None}
 
 
 def trend(metric: dict) -> str:
@@ -62,8 +111,9 @@ def validate_analysis(analysis: dict, metrics: dict, news: dict) -> None:
         value = analysis[key]
         if not isinstance(value, str) or len(value) > 1800:
             raise ValueError("narrative_size")
-        if re.search(r"\d|%|https?://|[<>]|gsk_|sk-proj-|efic[aá]cia|efetividade|causad[oa]|provocad[oa]|devido [aà]", value, re.I):
-            raise ValueError("unverified_narrative_claim")
+        for code, pattern in TEXT_RULES:
+            if re.search(pattern, value, re.I):
+                raise AnalysisValidationError(code, key)
     if not analysis["historical_commentary"].strip():
         raise ValueError("empty_historical_commentary")
     citations = analysis["cited_news_ids"]
@@ -165,6 +215,7 @@ class ReportAgent:
                     "id", "title", "excerpt", "source", "published_at")} for article in news["articles"]]}
                 }, ensure_ascii=False)}]
             for attempt in range(2):
+                draft = None
                 try:
                     response = self.client.complete(messages, schema=output_schema(territories))
                     emit("llm_draft", model=self.client.model, usage=response["usage"], response_id=response["response_id"])
@@ -174,8 +225,18 @@ class ReportAgent:
                     emit("narrative_validated", numeric_table="deterministic", growth_trends="matched")
                     break
                 except (ValueError, KeyError, TypeError) as error:
-                    emit("narrative_rejected", attempt=attempt + 1, reason="schema_or_evidence_validation")
-                    messages.append({"role": "user", "content": "Saída rejeitada. Gere somente o JSON do schema, sem algarismos nos comentários, com tendências conferidas e referências apenas das notícias retornadas."})
+                    diagnostic = validation_diagnostic(error)
+                    emit("narrative_rejected", attempt=attempt + 1, **diagnostic)
+                    if attempt == 0:
+                        # Devolver somente JSON de conteúdo, em memória; nunca raciocínio ou log do rascunho.
+                        if isinstance(draft, dict):
+                            encoded = json.dumps(draft, ensure_ascii=False)
+                            if len(encoded) <= 8000:
+                                messages.append({"role": "assistant", "content": encoded})
+                        target = diagnostic["field"] or "JSON"
+                        messages.append({"role": "user", "content": f"Saída rejeitada em {target}: {diagnostic['reason']}. "
+                            + REPAIR_HINTS[diagnostic["reason"]]
+                            + " Retorne novamente o JSON completo, preservando as outras regras e evidências."})
                 except ProviderError as error:
                     warnings.append(error.code)
                     emit("llm_unavailable", error_code=error.code, **error.diagnostic())

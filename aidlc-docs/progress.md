@@ -1,5 +1,11 @@
 # Registro AI-DLC
 
+## 12/11/2026 — Resposta real recebida; rejeição textual exige diagnóstico específico
+- Operador confirmou v4 com três ferramentas concluídas e nenhuma falha HTTP; relatório parcial bdf99fa78e234811999902f412a262e7 ficou sem narrativa. Diagnóstico apenas de redação com evidências salvas retornou unverified_narrative_claim.
+- O código anterior agrupava números, marcação, credenciais, termos de eficácia e causalidade. Não permite determinar retroativamente a categoria específica. Separados códigos e campo do comentário; mantidos os mesmos padrões de bloqueio, inclusive em negações.
+- Prompt explicita restrições de linguagem; reparo único recebe JSON rejeitado e orientação específica em memória. Rascunho não é salvo em relatório/auditoria. Diagnóstico HML passa a imprimir rejeicoes_narrativa. Nenhuma validação foi desligada para aceitar a resposta.
+- 57 testes Python passaram, incluindo categorias, negativos ainda bloqueados, correção direcionada, orçamento de tentativas, descarte de rascunhos rejeitados e sanitização de erros desconhecidos. Gate de geração real com narrativa continua pendente na VM.
+
 ## 12/11/2026 — Três ferramentas aceitas em HML; quota bloqueou redação
 - Operador confirmou prompt v3 e três rodadas de ferramentas concluídas na Groq. Relatório parcial 8d9858acbed44c3182153e7d6d8ee2f8 preservou carga, métricas, séries e cinco notícias. Na etapa llm_unavailable, HTTP 429/rate_limit_exceeded impediu narrativa. Gate de ferramentas reais validado; gate de narrativa permanece aberto.
 - Não é possível concluir qual janela de quota foi atingida a partir do registro anterior. Reduzido contexto das coletas independentes e orçamento máximo de saída de 1.800 para 512 por chamada de ferramenta. Redação recebe métricas e notícias compactas; gráficos e séries completos continuam no relatório.
