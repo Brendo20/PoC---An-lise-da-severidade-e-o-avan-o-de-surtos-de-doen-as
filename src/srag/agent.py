@@ -9,10 +9,7 @@ from datetime import datetime, timezone
 
 from srag.groq_client import ProviderError
 
-PROMPT_VERSION = "srag-2019-v6-constrained-text"
-# Restrição regular simples, aplicada apenas aos comentários (IDs continuam livres).
-# A validação local permanece mais estrita e também bloqueia algarismos Unicode.
-COMMENT_PATTERN = r"^[^0-9%<>]*$"
+PROMPT_VERSION = "srag-2019-v5-targeted-repair"
 TOOL_DESCRIPTIONS = {
     "consultar_metricas": "Consultar indicadores agregados dos territórios já selecionados e da carga fixada.",
     "consultar_series": "Consultar séries de trinta dias e doze meses dos territórios selecionados.",
@@ -97,9 +94,9 @@ def output_schema(territories: list[str]) -> dict:
     return {"type": "object", "additionalProperties": False,
             "required": ["historical_commentary", "current_commentary", "cited_news_ids", "growth_trends"],
             "properties": {
-                "historical_commentary": {"type": "string", "pattern": COMMENT_PATTERN,
+                "historical_commentary": {"type": "string",
                     "description": "Comentário qualitativo em português, sem algarismos, percentuais, HTML ou IDs."},
-                "current_commentary": {"type": "string", "pattern": COMMENT_PATTERN,
+                "current_commentary": {"type": "string",
                     "description": "Síntese qualitativa dos títulos e resumos, sem datas, algarismos, percentuais, HTML ou IDs. Referências ficam apenas em cited_news_ids."},
                 "cited_news_ids": {"type": "array", "items": {"type": "string"}},
                 "growth_trends": {"type": "array", "items": {"type": "object", "additionalProperties": False,

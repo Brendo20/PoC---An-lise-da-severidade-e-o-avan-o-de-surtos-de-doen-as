@@ -154,16 +154,16 @@ Consumo: as etapas de coleta independentes não reenviam resultados de etapas an
 
 Validação textual: os comentários não podem conter algarismos/percentuais, links/HTML, padrões de credenciais ou termos bloqueados de eficácia/causalidade. Termos bloqueados também são rejeitados em frases negativas; o prompt pede descrições neutras das limitações. Cada rejeição registra categoria e campo, sem o texto. A única tentativa de correção recebe o rascunho JSON e uma instrução específica em memória; o rascunho rejeitado não é persistido. Se falhar novamente, o relatório continua parcial. O teste HML mostra `rejeicoes_narrativa` para identificar a regra sem expor conteúdo do modelo.
 
-Os campos de comentário também declaram `pattern: ^[^0-9%<>]*$` no JSON Schema estrito. Essa restrição não se aplica aos IDs de notícias, às métricas ou aos gráficos. Validação local continua ativa, inclusive para algarismos Unicode. Compatibilidade e aderência efetiva desse schema na Groq devem ser verificadas em HML, não presumidas a partir de regex local.
+O experimento `pattern: ^[^0-9%<>]*$` retornou HTTP 400/json_validate_failed em HML e foi retirado do schema implantável. A restrição de números permanece na validação local, inclusive para algarismos Unicode. O padrão continua disponível apenas na sondagem para reprodução do experimento; não presumir que schema mais restrito resolveu a geração.
 
 Para sondar somente a redação com um relatório já salvo, **antes de reconstruir o serviço**, execute na VM:
 
 ```bash
 git pull --ff-only
-docker compose -f compose.hml.yml exec -T api python - REPORT_ID < check_narrative_schema_hml.py
+docker compose -f compose.hml.yml exec -T api python - REPORT_ID --inspect-numbers < check_narrative_schema_hml.py
 ```
 
-Substitua REPORT_ID pelo ID de uma execução existente. A sondagem usa o código do script via stdin com a imagem v5 ou posterior já em execução, aplica o novo padrão ao schema e faz uma única chamada real. Não altera relatórios, não executa ferramentas ou busca notícias; mantém as evidências originais como teste de reprodução. `status=passed` valida a nova narrativa com essas evidências, sem promover o relatório antigo ou provar o fluxo completo atualizado. Se rejeitada ou houver erro HTTP, a sondagem encerra com código de falha. Não executar em loop. Depois de aprovada e com quota disponível, reconstruir a imagem e realizar o teste completo de HML.
+Substitua REPORT_ID pelo ID de uma execução existente. A sondagem usa o script via stdin com a imagem v5 ou posterior já em execução e faz uma única chamada real. `--inspect-numbers` usa schema sem pattern e, em rejeição, mostra até cinco trechos numéricos curtos por campo, ocultando credenciais. Não mostra raciocínio nem persiste rascunho. Não altera relatórios, não executa ferramentas ou busca notícias; mantém as evidências originais como teste de reprodução. Sem essa opção, reproduz apenas o experimento de pattern já rejeitado. `status=passed` valida a nova narrativa com essas evidências, sem promover o relatório antigo ou provar o fluxo completo atualizado. Se rejeitada ou houver erro HTTP, encerra com código de falha. Não executar em loop. A interpretação de um número como nome, data ou afirmação quantitativa exige olhar o trecho, sem liberar automaticamente qualquer número encontrado em fonte.
 
 Números e gráficos são renderizados pelo backend. A validação confere estrutura, referências, tendências de crescimento e restrições da narrativa; isso **não prova a correção semântica de toda frase do LLM**. Texto inválido admite uma tentativa de correção; falha ou quota gera relatório parcial explícito, preservando indicadores. Máximo de três rodadas de ferramentas e duas tentativas de narrativa; timeout de 25 segundos por chamada e sem retentativas automáticas de quota.
 

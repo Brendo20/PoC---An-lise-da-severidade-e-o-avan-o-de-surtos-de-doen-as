@@ -1,5 +1,10 @@
 # Registro AI-DLC
 
+## 12/11/2026 — Experimento de pattern rejeitado; diagnóstico de trechos
+- Operador executou sondagem sobre relatório existente, sem rebuild. Groq retornou HTTP 400/json_validate_failed; não prova suporte ou aderência ao pattern. Nenhum relatório foi promovido. Retirado pattern do schema implantável e mantida versão v5 do prompt, que é a imagem em execução confirmada.
+- Sondagem recebeu --inspect-numbers: uma chamada de redação sem pattern, com até cinco trechos numéricos limitados por comentário. Não expõe chave ou campo de raciocínio, não repete ferramentas nem grava rascunho. Necessário distinguir nomes/datas/referências de afirmações quantitativas antes de mudar a política; nenhum trecho ainda observado.
+- 60 testes Python passaram, incluindo limites dos trechos e ocultação de credenciais. Gate de narrativa continua aberto. Próxima execução é somente diagnóstico, sem rebuild.
+
 ## 12/11/2026 — Rejeição localizada em números do comentário atual
 - Operador confirmou v5, três ferramentas concluídas e nenhum erro de provedor. As duas tentativas de redação foram rejeitadas por narrative_numbers em current_commentary no relatório 07c95c16a460495f80819ad8a9c18acd. Não é possível determinar o número ou trecho exato, pois o rascunho não foi persistido.
 - v6 adiciona pattern sem algarismos/percentuais/marcação apenas aos dois campos de comentário, mantendo validação local e referências em campo separado. Não remove texto numerado após geração nem aceita uma saída reprovada.

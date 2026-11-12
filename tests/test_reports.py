@@ -1,5 +1,4 @@
 import json
-import re
 import tempfile
 from copy import deepcopy
 from pathlib import Path
@@ -220,13 +219,9 @@ class ReportTests(TestCase):
         self.assertEqual(result, {'reason': 'invalid_response', 'field': None})
         self.assertNotIn('private-key', str(result))
 
-    def test_schema_constrains_comment_numbers_without_blocking_reference_ids(self):
+    def test_schema_leaves_text_rules_to_validator_and_reference_ids_separate(self):
         schema = output_schema(['Brasil'])
         for field in ('historical_commentary', 'current_commentary'):
-            pattern = schema['properties'][field]['pattern']
-            for value in ('Dados do período histórico.', 'Síntese atual de SRAG.', ''):
-                self.assertIsNotNone(re.fullmatch(pattern, value))
-            for value in ('No ano de 2019', 'COVID-19', 'Taxa de 10%', '<b>Texto</b>', 'news-123'):
-                self.assertIsNone(re.fullmatch(pattern, value))
+            self.assertNotIn('pattern', schema['properties'][field])
         self.assertNotIn('pattern', schema['properties']['cited_news_ids']['items'])
         self.assertEqual(schema['properties']['growth_trends']['items']['properties']['territory']['enum'], ['Brasil'])
