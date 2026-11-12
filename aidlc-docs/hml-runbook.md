@@ -36,3 +36,7 @@ compose.hml.yml e Dockerfile.api acrescentam um único serviço que serve interf
 API confirmada pelo operador: readiness e dashboard usam o mesmo snapshot, 33 territórios e 48.866 casos. Chave Groq autenticada na listagem de modelos; inferência ainda não validada. Compose passa GROQ_API_KEY/GROQ_MODEL ao backend e acrescenta volume privado de relatórios; banco e carga existentes permanecem reutilizados.
 
 Executar os comandos da seção U5 do README, incluindo `python - < check_agent_hml.py` dentro do container via Compose. Não exibir `.env` nem configuração expandida. Não rodar `down -v`. A saída parcial exige revisão dos avisos; só marcar integração LLM aceita após geração completa. Nenhuma rota Caddy deve ser acrescentada nesta etapa.
+
+## Aceite real U5 confirmado
+
+Operador confirmou build e healthcheck saudáveis e relatório completo 62a21130022b4e8296737c20a2de4972, prompt srag-2019-v5-targeted-repair. Três ferramentas, cinco notícias, narrativa validada, zero avisos e erros de provedor. Primeira redação rejeitada e reparo único aceito, com dezoito eventos de auditoria. Integração aceita para essa execução; não é necessário repetir geração para inspecionar seu HTML interno em /api/reports/62a21130022b4e8296737c20a2de4972/html. Acesso visual, revisão humana e rota externa autenticada permanecem pendentes.

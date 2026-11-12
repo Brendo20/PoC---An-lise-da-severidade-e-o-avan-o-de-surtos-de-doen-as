@@ -1,5 +1,11 @@
 # Registro AI-DLC
 
+## 12/11/2026 — Aceite de integração real U5 confirmado em HML
+- Evidência do operador: rebuild ARM64 e container saudável; check_agent_hml.py retornou complete, narrativa_validada=true, três rodadas de ferramentas, cinco notícias, avisos vazios e erros_provedor vazios. Relatório 62a21130022b4e8296737c20a2de4972, modelo openai/gpt-oss-20b, prompt srag-2019-v5-targeted-repair.
+- Snapshot srag-ec77679e6022ca66-2019-12-28-v1.0.0 e carga 2026-11-12T12:45:32.573171+00:00. O script verifica métricas iguais ao dashboard, séries de trinta dias/doze meses e dois gráficos SVG. Nenhuma chamada real à VM foi feita pelo ambiente local; resultado fornecido pelo operador.
+- Auditoria com dezoito eventos. Primeira tentativa rejeitada por narrative_numbers em current_commentary; reparo único aprovado. Guardrail operou antes da publicação da narrativa. Não representa ausência de variação futura, quotas ou garantia semântica integral.
+- Gate de integração real de U5 atendido para essa execução. Relatório HTML/JSON e auditoria permanecem no volume privado. Próximos gates: inspeção humana e visual em HML, diagrama conceitual PDF, revisão final de entrega e acesso externo restrito antes de qualquer rota pública.
+
 ## 12/11/2026 — Experimento de pattern rejeitado; diagnóstico de trechos
 - Operador executou sondagem sobre relatório existente, sem rebuild. Groq retornou HTTP 400/json_validate_failed; não prova suporte ou aderência ao pattern. Nenhum relatório foi promovido. Retirado pattern do schema implantável e mantida versão v5 do prompt, que é a imagem em execução confirmada.
 - Sondagem recebeu --inspect-numbers: uma chamada de redação sem pattern, com até cinco trechos numéricos limitados por comentário. Não expõe chave ou campo de raciocínio, não repete ferramentas nem grava rascunho. Necessário distinguir nomes/datas/referências de afirmações quantitativas antes de mudar a política; nenhum trecho ainda observado.

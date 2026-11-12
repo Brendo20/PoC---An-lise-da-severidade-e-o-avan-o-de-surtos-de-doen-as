@@ -29,3 +29,9 @@ POST /api/reports recebe seleção e snapshot esperados. Se a carga ativa diverg
 
 ## Aceite e validação
 Testar provider sem chamada externa real, cabeçalhos/erro sanitizado/limites; parse RSS/RDF/Atom e conteúdo malicioso; tool calls desconhecidas/argumentos e limite; tendências e saída inválida; escape HTML; snapshot fixado; persistência de auditoria; falhas e cache; integração da interface e alteração de filtro durante geração. Testar feeds públicos reais separadamente. Execução real do LLM depende da VM e não será inferida a partir de testes com mocks.
+
+### Resultado real confirmado pelo operador
+
+Em 12/11/2026, check_agent_hml.py na VM retornou complete para o relatório 62a21130022b4e8296737c20a2de4972. Três rodadas de ferramentas, cinco notícias, narrativa validada, nenhum aviso ou erro de provedor. Prompt v5-targeted-repair, snapshot srag-ec77679e6022ca66-2019-12-28-v1.0.0 e carga 2026-11-12T12:45:32.573171+00:00. Primeira redação rejeitada por números em current_commentary; segunda aceita. Dezoito eventos de auditoria.
+
+Gate de integração real atendido nessa execução: o teste confere métricas, séries e dois gráficos. Pendem leitura humana da narrativa e validação visual do relatório no ambiente real. Não equivale a autorização de divulgação pública dos dados ou a garantia de que todas as gerações futuras serão completas. Evidência comunicada pelo operador, distinta dos sessenta testes Python locais.

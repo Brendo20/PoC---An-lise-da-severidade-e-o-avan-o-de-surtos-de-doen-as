@@ -4,7 +4,7 @@ Repositório: [Brendo20 — PoC de análise de surtos](https://github.com/Brendo
 
 Projeto de relatórios epidemiológicos com ferramentas determinísticas e agente de IA, desenvolvido com AI-DLC.
 
-Status: dashboard, carga PostgreSQL e API confirmados em HML pelo operador. Agente Groq com ferramentas de banco, notícias e relatório implementado e validado localmente com dublês. Busca real de notícias validada; primeira geração real na Groq e build atualizado na VM ainda pendentes.
+Status: fluxo completo confirmado pelo operador em HML em 12/11/2026: PostgreSQL, três chamadas de ferramentas na Groq, cinco notícias e relatório completo com narrativa validada. A primeira redação foi rejeitada por números no comentário atual e o reparo único passou. Esse aceite de integração não equivale a revisão semântica integral ou liberação pública.
 
 ## Documentação
 - [Requisitos e critérios de aceite](aidlc-docs/inception.md)
@@ -193,4 +193,10 @@ O último comando realiza uma geração real e consome a quota disponível; impr
 
 Testes locais: suíte Python e `tests/frontend-agent.cjs` usam dublês de Groq/banco/notícias. O servidor `tests/serve_api_fixture.py` habilita essa simulação explicitamente. Executar o teste de navegador não atesta acesso real aos provedores. Desenho e critérios AI-DLC: [U5 — agente e relatórios](aidlc-docs/units/U5-agent-reports.md).
 
-Pendências da entrega: teste real do agente em HML, diagrama conceitual em PDF, revisão final do README e evidências de aceite. Ocupação operacional de UTI, cobertura vacinal e mortalidade populacionais permanecem não calculáveis pelo CSV exclusivo; proxies estão identificados e não substituem essas definições.
+Pendências da entrega: inspeção humana do relatório e validação visual em HML, diagrama conceitual em PDF, revisão final da documentação e controle de acesso para exposição externa. Ocupação operacional de UTI, cobertura vacinal e mortalidade populacionais permanecem não calculáveis pelo CSV exclusivo; proxies estão identificados e não substituem essas definições.
+
+### Evidência de integração real em HML — 12/11/2026
+
+Operador confirmou build ARM64 saudável e execução de `check_agent_hml.py` com `status=complete`, narrativa validada, três rodadas de ferramentas, cinco notícias, nenhum erro de provedor e nenhum aviso. Relatório `62a21130022b4e8296737c20a2de4972`, modelo `openai/gpt-oss-20b`, prompt `srag-2019-v5-targeted-repair`, snapshot `srag-ec77679e6022ca66-2019-12-28-v1.0.0`, carga `2026-11-12T12:45:32.573171+00:00`. Auditoria com dezoito eventos: primeira narrativa rejeitada por `narrative_numbers` em `current_commentary`; segunda aceita. O teste também confere igualdade das métricas com o dashboard, séries de trinta dias/doze meses e dois SVGs no HTML. Trata-se de evidência fornecida pelo operador; o ambiente local não acessou a VM.
+
+HTML interno: `/api/reports/62a21130022b4e8296737c20a2de4972/html`. O arquivo e sua auditoria permanecem no volume privado de HML, fora do repositório público. Aceite da integração real registrado em [U5](aidlc-docs/units/U5-agent-reports.md); revisão de conteúdo, consistência semântica e exposição externa continuam separadas.
