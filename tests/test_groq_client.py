@@ -41,3 +41,26 @@ class GroqTests(TestCase):
         for raw in (b'invalid', b'x' * 1048577, b'{"choices":[]}'):
             with self.assertRaises(ProviderError):
                 GroqClient('fixture', opener=lambda *args, **kwargs: BytesIO(raw)).complete([])
+
+    def test_gpt_oss_tool_requests_explicitly_disable_parallel_calls(self):
+        captured = []
+        def opener(request, timeout):
+            captured.append(json.loads(request.data))
+            return BytesIO(json.dumps({'choices': [{'finish_reason': 'tool_calls', 'message': {
+                'tool_calls': [{'id': 'fixture', 'function': {'name': 'consultar_metricas', 'arguments': '{}'}}]}}]}).encode())
+        GroqClient('fixture', opener=opener).complete([], tools=[{'type': 'function', 'function': {
+            'name': 'consultar_metricas', 'parameters': {'type': 'object', 'properties': {}}}}])
+        self.assertIs(captured[0]['parallel_tool_calls'], False)
+        self.assertEqual(captured[0]['tool_choice'], 'required')
+
+    def test_http_diagnostic_retains_status_and_allowlisted_code_only(self):
+        raw = json.dumps({'error': {'code': 'tool_use_failed', 'message': 'fixture-secret',
+                                   'failed_generation': 'private reasoning'}}).encode()
+        def opener(*args, **kwargs):
+            raise urllib.error.HTTPError('https://api.groq.com', 400, '', {}, BytesIO(raw))
+        with self.assertRaises(ProviderError) as error:
+            GroqClient('fixture-secret', opener=opener).complete([])
+        self.assertEqual(error.exception.code, 'provider_http_400')
+        self.assertEqual(error.exception.diagnostic(), {'http_status': 400, 'provider_code': 'tool_use_failed'})
+        self.assertNotIn('fixture-secret', str(error.exception.__dict__))
+        self.assertNotIn('private reasoning', str(error.exception.__dict__))

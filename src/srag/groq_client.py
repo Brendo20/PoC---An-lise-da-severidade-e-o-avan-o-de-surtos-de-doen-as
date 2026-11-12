@@ -11,9 +11,12 @@ ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
 
 
 class ProviderError(RuntimeError):
-    def __init__(self, code: str, status: int | None = None):
+    def __init__(self, code: str, status: int | None = None, provider_code: str | None = None):
         super().__init__(code)
-        self.code, self.status = code, status
+        self.code, self.status, self.provider_code = code, status, provider_code
+
+    def diagnostic(self) -> dict:
+        return {"http_status": self.status, "provider_code": self.provider_code}
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -39,7 +42,8 @@ class GroqClient:
         payload = {"model": self.model, "messages": messages, "temperature": 0.1,
                    "max_completion_tokens": 1800, "reasoning_effort": "low"}
         if tools:
-            payload.update(tools=tools, tool_choice="required", parallel_tool_calls=True)
+            # GPT-OSS na Groq suporta ferramentas, mas não chamadas paralelas.
+            payload.update(tools=tools, tool_choice="required", parallel_tool_calls=False)
         if schema is not None:
             payload["response_format"] = {"type": "json_schema", "json_schema": {
                 "name": "srag_report", "strict": True, "schema": schema}}
@@ -62,9 +66,19 @@ class GroqClient:
                               for key in ("prompt_tokens", "completion_tokens", "total_tokens")},
                     "response_id": str(result.get("id", ""))[:120]}
         except urllib.error.HTTPError as error:
+            # Não guardar mensagem bruta/failed_generation: podem conter prompts ou raciocínio.
+            provider_code = None
+            try:
+                details = json.loads(error.read(8192)).get("error", {})
+                candidate = details.get("code") if isinstance(details, dict) else None
+                if candidate in ("tool_use_failed", "json_validate_failed", "model_not_found",
+                                 "context_length_exceeded", "rate_limit_exceeded", "invalid_api_key"):
+                    provider_code = candidate
+            except (ValueError, TypeError, AttributeError, OSError):
+                pass
             code = {401: "authentication_error", 403: "permission_error", 429: "rate_limit"}.get(
-                error.code, "provider_http_error")
-            raise ProviderError(code, error.code) from None
+                error.code, f"provider_http_{error.code}")
+            raise ProviderError(code, error.code, provider_code) from None
         except (urllib.error.URLError, TimeoutError, OSError):
             raise ProviderError("provider_connection_error") from None
         except (ValueError, KeyError, IndexError, TypeError):

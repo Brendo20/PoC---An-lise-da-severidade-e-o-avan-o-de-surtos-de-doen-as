@@ -394,7 +394,7 @@
     $('#sr-agent-result').hidden = true;
     $('#sr-agent-status').textContent = 'Consultando indicadores, séries e notícias. Aguarde a validação do relatório.';
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 150000);
+    const timeout = setTimeout(() => controller.abort(), 180000);
     try {
       const response = await fetch('api/reports', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ territories: selected(), snapshot_id: data.snapshot_id }), signal: controller.signal });

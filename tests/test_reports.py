@@ -32,9 +32,10 @@ class ReportTests(TestCase):
         self.assertEqual(report["metrics"]["SP"]["cases"]["value"], 100)
         self.assertEqual(len(report["series"]["SP"]["daily"]), 30)
         self.assertEqual(len(report["series"]["SP"]["monthly"]), 12)
-        self.assertEqual(len(self.client.calls), 2)
+        self.assertEqual(len(self.client.calls), 4)
         self.assertIsNone(self.client.calls[0]["schema"])
-        self.assertIsNone(self.client.calls[1]["tools"])
+        self.assertIsNone(self.client.calls[3]["tools"])
+        self.assertEqual([len(call["tools"]) for call in self.client.calls[:3]], [3, 2, 1])
         html = self.store.html(report["report_id"])
         self.assertEqual(html.count('<svg '), 2)
         self.assertIn("Não calculável", html)
@@ -59,7 +60,7 @@ class ReportTests(TestCase):
     def test_cache_cooldown_and_single_generation(self):
         first = self.generate()
         self.assertTrue(self.generate()["cached"])
-        self.assertEqual(len(self.client.calls), 2)
+        self.assertEqual(len(self.client.calls), 4)
         with self.assertRaises(ReportError) as error:
             self.service.generate(["Brasil"], "fixture")
         self.assertEqual(error.exception.status, 429)
@@ -97,7 +98,7 @@ class ReportTests(TestCase):
         client = Invalid()
         report = ReportAgent(self.repository, client, self.news).run(
             self.repository.pin_snapshot(), ["Brasil"], lambda *args, **kwargs: None)
-        self.assertEqual(len(client.calls), 3)
+        self.assertEqual(len(client.calls), 5)
         self.assertEqual(report["status"], "partial")
 
     def test_quota_failure_keeps_deterministic_report(self):

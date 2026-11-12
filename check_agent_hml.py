@@ -19,7 +19,7 @@ request = urllib.request.Request(BASE + '/api/reports',
     data=json.dumps({'territories': ['Brasil'], 'snapshot_id': dashboard['snapshot_id']}).encode(),
     headers={'Content-Type': 'application/json'}, method='POST')
 try:
-    with urllib.request.urlopen(request, timeout=150) as response:
+    with urllib.request.urlopen(request, timeout=180) as response:
         report = json.load(response)
 except urllib.error.HTTPError as error:
     try:
@@ -41,6 +41,8 @@ print(json.dumps({
     'snapshot_id': report['snapshot_id'], 'carga': report['loaded_at'],
     'noticias': len(report['news']['articles']), 'narrativa_validada': report['analysis'] is not None,
     'avisos': report['warnings'], 'cache': report['cached'], 'eventos_auditoria': len(report['audit']),
+    'erros_provedor': [{key: event.get(key) for key in ('event', 'error_code', 'http_status', 'provider_code')}
+                       for event in report['audit'] if event.get('http_status') is not None],
     'relatorio': '/api/reports/' + report['report_id'] + '/html'
 }, ensure_ascii=False, indent=2))
 if report['status'] != 'complete':

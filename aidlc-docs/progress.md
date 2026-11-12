@@ -1,5 +1,11 @@
 # Registro AI-DLC
 
+## 12/11/2026 — Correção de compatibilidade Groq após falha em HML
+- Evidência do operador: duas gerações completas tentadas resultaram em relatório parcial, cinco notícias e 12 eventos, sem narrativa. Diagnóstico isolado da primeira chamada teve sucesso com uma ferramenta; não comprova estabilidade do fluxo inteiro.
+- Revisão da documentação oficial identificou incompatibilidade: GPT-OSS não suporta ferramentas paralelas, mas o cliente habilitava parallel_tool_calls=true e o prompt incentivava mesma rodada. Corrigido para false e uma chamada por rodada; ferramentas continuam sendo escolhidas pelo modelo com escopo validado.
+- HTTP genérico deixou de ocultar status. Auditoria preserva status e código do provedor em allowlist, descartando mensagem bruta/failed_generation. O teste HML passa a imprimir esses campos. Janela de espera cliente ampliada para três minutos para acomodar as rodadas sequenciais.
+- Validação local: 52 testes Python passaram, incluindo parâmetro de paralelismo, três rodadas sequenciais com escopo pendente e diagnóstico sanitizado. Não houve inferência real Groq local. Correção deve ser reconstruída e validada na VM; causa exata do HTTP anterior não foi recuperada retroativamente.
+
 ## 12/11/2026 — U5 construída; gate de integração real pendente
 - Entrada: API em HML validada com 33 territórios, 48.866 casos e carga efetiva; Groq autenticada e modelo disponível após inclusão de User-Agent. Usuário autorizou continuar.
 - Construção: agente com três ferramentas fechadas, snapshot/territórios fixados, cliente Groq sem SDK, busca RSS, narrativa estruturada, relatório HTML/JSON com dois gráficos e volume de auditoria. Registro da escolha arquitetural em ADR-004.
