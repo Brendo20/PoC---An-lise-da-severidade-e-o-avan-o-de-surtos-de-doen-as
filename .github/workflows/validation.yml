@@ -1,0 +1,25 @@
+name: Validate PoC
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python tests (no credentials or real dataset required)
+        env:
+          PYTHONPATH: src
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 -m unittest discover -s tests -v
+      - name: JavaScript syntax
+        run: |
+          node --check frontend/app.js
+          node --check tests/frontend-smoke.cjs
+          node --check tests/frontend-filters.cjs
+          node --check tests/frontend-tooltips.cjs

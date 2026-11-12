@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Exploração histórica dos registros de SRAG, com comparação entre estados e regiões e metodologia transparente.">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <title>Observatório SRAG · Indicium</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="vendor/d3.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+<div id="srag-design">
+  <header class="top"><span class="brand">Observatório SRAG</span><span class="small">Indicium · Health intelligence</span><span class="badge">Dados reais · uso local</span></header>
+  <p id="sr-loading" class="loading" role="status">Carregando dados e mapa…</p>
+  <main id="sr-app" hidden>
+    <div class="heading"><div class="titlegroup"><p class="small">VISÃO EPIDEMIOLÓGICA</p><h1>PoC - Análise da severidade e o avanço de surtos de doenças</h1><p class="small" id="sr-reference"></p></div><button type="button" class="primary" id="sr-report" aria-expanded="false" aria-controls="sr-report-body">Resumo dos dados</button></div>
+    <div class="filters">
+      <label for="sr-level">Divisão territorial<select id="sr-level"><option value="state">Estados</option><option value="region">Regiões</option></select></label>
+      <label for="sr-a">Território principal<select id="sr-a"></select></label>
+      <label for="sr-b">Comparar com<select id="sr-b"></select></label>
+      <button type="button" id="sr-reset">Voltar ao Brasil</button>
+    </div>
+    <div class="row"><span id="sr-context" aria-live="polite"></span><span class="small" id="sr-period"></span></div>
+    <section class="metrics" aria-label="Indicadores do recorte">
+      <article class="metric"><p class="small">Crescimento de casos · 7 dias</p><p class="metric-focus sr-main-name"></p><p class="value" id="sr-growth">—</p><p class="small" id="sr-growth-note"></p><p class="small" id="sr-growth-b"></p></article>
+      <article class="metric"><p class="small">Letalidade observada</p><p class="metric-focus sr-main-name"></p><p class="value" id="sr-fatal">—</p><p class="small" id="sr-fatal-note"></p><p class="small" id="sr-fatal-b"></p></article>
+      <article class="metric"><p class="small">Internação em UTI entre casos</p><p class="metric-focus sr-main-name"></p><p class="value" id="sr-icu">—</p><p class="small" id="sr-icu-note"></p><p class="small" id="sr-icu-b"></p><p class="small">Respostas conhecidas · não equivale à ocupação de leitos</p></article>
+      <article class="metric"><p class="small">Vacinação contra gripe entre casos</p><p class="metric-focus sr-main-name"></p><p class="value" id="sr-vaccine">—</p><p class="small" id="sr-vaccine-note"></p><p class="small" id="sr-vaccine-b"></p><p class="small">Respostas conhecidas · não equivale à cobertura populacional</p></article>
+    </section>
+    <div class="duo">
+      <section class="panel" aria-label="Exploração territorial"><div class="panelhead"><div><h2>Explore o território</h2><p class="small">Clique no mapa ou use a seleção por lista</p></div><span class="badge" id="sr-map-mode">Estados</span></div><div class="map-target" role="group" aria-label="Território alterado pelo mapa"><button type="button" id="sr-target-a" aria-pressed="true">Selecionar principal</button><button type="button" id="sr-target-b" aria-pressed="false">Selecionar comparação</button></div><svg id="sr-map" class="map" role="img" aria-label="Mapa das 27 unidades da federação; seleção equivalente disponível nas listas"></svg><p id="sr-map-status" class="small" aria-live="polite"></p><div class="legend"><span><span class="dot"></span> Principal</span><span><span class="dot second"></span> Comparação</span><span>Sem escala de risco</span></div><p class="small">Malha: IBGE · seleção por residência · cores não indicam incidência</p></section>
+      <section class="panel selection" aria-label="Resumo dos territórios"><div><h2 id="sr-detail-title">Brasil</h2><p class="small">Registros por início dos sintomas</p></div><div id="sr-detail"></div><button type="button" id="sr-compare">Adicionar comparação</button><button type="button" disabled>Municípios · próxima etapa</button><details><summary>Como ler os indicadores</summary><div class="method small"><p>Letalidade é a proporção de óbitos por SRAG entre os registros com desfecho conhecido, incluindo cura e óbito por outras causas no denominador.</p><p>Desfechos são os disponíveis na extração atual, sem reconstrução do que era conhecido em 2019.</p><p>Crescimento compara os últimos 7 dias com os 7 anteriores. Números absolutos refletem populações e notificação diferentes; não constituem comparação de risco.</p></div></details></section>
+    </div>
+    <div class="charts">
+      <section class="panel"><div class="panelhead"><div><h2>Casos diários</h2><p class="small" id="sr-daily-period"></p></div></div><div id="sr-daily"></div><div class="legend sr-chart-legend"></div><p class="small" id="sr-daily-note"></p><details class="data-table"><summary>Consultar valores diários</summary><div id="sr-daily-table"></div></details></section>
+      <section class="panel"><div class="panelhead"><div><h2>Casos mensais</h2><p class="small" id="sr-monthly-period"></p></div></div><div id="sr-monthly"></div><div class="legend sr-chart-legend"></div><p class="small" id="sr-monthly-note"></p><details class="data-table"><summary>Consultar valores mensais</summary><div id="sr-monthly-table"></div></details></section>
+    </div>
+    <section class="panel" id="sr-report-section"><div class="panelhead"><div><h2>Resumo e evidências</h2><p class="small">Síntese determinística dos indicadores · agente e notícias ainda não integrados</p></div><span class="badge">Sem interpretação causal</span></div><div id="sr-report-body" class="report" hidden aria-live="polite"></div><details id="sr-audit"><summary>Fontes, metodologia e qualidade dos dados</summary><div id="sr-audit-body" class="method small"></div></details></section>
+    <footer class="footer"><span id="sr-build"></span><span>AI-DLC · validação local · publicação pendente</span></footer>
+  </main>
+</div>
+</body>
+</html>
