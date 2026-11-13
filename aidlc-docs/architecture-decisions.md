@@ -31,3 +31,7 @@ Atualização operacional: inventário, carga idempotente, reader restrito e API
 ### Revisão por evidência HML — coleta prescrita e redação isolada
 
 Gerações reais retornaram HTTP 400/tool_use_failed na primeira chamada, inclusive após desabilitar paralelismo. Uma tentativa isolada teve sucesso; não houve relatório completo aceito. Revisado para oferecer uma função obrigatória por etapa com tool_choice nomeado, em ordem fixada pelo orquestrador. Há function calling real e validação do retorno; deixa de haver escolha livre de ordem pelo modelo. Prompt de coleta separado do de redação. A redação parte de evidências explícitas em conversa nova, evitando carregar instruções de coleta para uma requisição sem ferramentas. Não adicionar retries automáticos ou desabilitar validação da Groq. Aceite pendente de nova geração na VM.
+
+### Estado posterior validado e diagrama
+
+Em 12/11/2026 o operador confirmou relatório completo com três ferramentas, cinco notícias, narrativa aceita após um reparo e zero avisos; ver U5 e progress.md. Em 13/11/2026 o PDF conceitual foi gerado, renderizado e inspecionado: output/pdf/arquitetura-conceitual-srag.pdf. Componentes de acesso externo são identificados como pendentes. O documento representa o código atual e não a proposta inicial de worker LangGraph.

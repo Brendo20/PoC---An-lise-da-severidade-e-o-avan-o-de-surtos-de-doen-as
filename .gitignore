@@ -20,3 +20,4 @@ design/*preview.png
 build/
 dist/
 .pytest_cache/
+tmp/pdfs/

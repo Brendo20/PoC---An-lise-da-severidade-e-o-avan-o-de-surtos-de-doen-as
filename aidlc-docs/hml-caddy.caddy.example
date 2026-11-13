@@ -1,0 +1,14 @@
+# Modelo de site adicional. Não substituir o Caddyfile compartilhado inteiro.
+# Caddy >= 2.8. Substituir o token abaixo pelo hash gerado privadamente na VM.
+# Não aplicar enquanto DNS, mounts e versão do proxy não forem conferidos.
+poc-srag.estacaolab.com.br {
+    basic_auth {
+        srag-hml REPLACE_WITH_BCRYPT_HASH
+    }
+
+    header X-Robots-Tag "noindex, nofollow"
+
+    reverse_proxy indicium-srag-hml-api:8000 {
+        header_up -Authorization
+    }
+}

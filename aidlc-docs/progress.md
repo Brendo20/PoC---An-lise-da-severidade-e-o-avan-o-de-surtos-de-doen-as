@@ -1,5 +1,13 @@
 # Registro AI-DLC
 
+## 13/11/2026 — PDF conceitual entregue e acesso externo preparado
+- Usuário autorizou continuar. Gerado output/pdf/arquitetura-conceitual-srag.pdf, duas páginas: orquestrador, ferramentas, LLM, PostgreSQL, notícias, fluxo de carga, auditoria, guardrails e limites. Fonte reproduzível build_architecture_pdf.py; sem novas dependências de runtime da API.
+- PDF renderizado com Poppler e inspecionado visualmente; layout de setas ajustado para não atravessar blocos. Extração confirmou duas páginas com texto selecionável. Imagens intermediárias em tmp/pdfs, fora do Git.
+- README vincula PDF e matriz do desafio em delivery-review.md. Inception atualizado para refletir o escopo exclusivo do CSV e a sequência real das unidades; histórico de decisões permanece neste registro. Indicadores não calculáveis continuam explícitos, sem alegação de atendimento por proxies.
+- Usuário escolheu poc-srag.estacaolab.com.br e informou IP público HML 163.176.51.25. Consulta DNS retornou 216.198.79.65 e 64.29.17.1; apontamento divergente, ajuste de DNS ainda não confirmado.
+- Preparados runbook e modelo de site Caddy com autenticação por hash, todos os caminhos protegidos e proxy pelo alias interno. Não aplicados na VM; versão, mounts, DNS, certificado e acesso autenticado ainda pendentes de preflight. Nenhum segredo versionado e nenhum host existente alterado.
+- Próximo gate: usuário executar preflight e corrigir DNS; inspecionar dashboard e relatório existente em acesso restrito, sem gerar nova chamada LLM só para revisão.
+
 ## 12/11/2026 — Aceite de integração real U5 confirmado em HML
 - Evidência do operador: rebuild ARM64 e container saudável; check_agent_hml.py retornou complete, narrativa_validada=true, três rodadas de ferramentas, cinco notícias, avisos vazios e erros_provedor vazios. Relatório 62a21130022b4e8296737c20a2de4972, modelo openai/gpt-oss-20b, prompt srag-2019-v5-targeted-repair.
 - Snapshot srag-ec77679e6022ca66-2019-12-28-v1.0.0 e carga 2026-11-12T12:45:32.573171+00:00. O script verifica métricas iguais ao dashboard, séries de trinta dias/doze meses e dois gráficos SVG. Nenhuma chamada real à VM foi feita pelo ambiente local; resultado fornecido pelo operador.

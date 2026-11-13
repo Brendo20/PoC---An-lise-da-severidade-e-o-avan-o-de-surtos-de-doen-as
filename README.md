@@ -10,8 +10,11 @@ Status: fluxo completo confirmado pelo operador em HML em 12/11/2026: PostgreSQL
 - [Requisitos e critérios de aceite](aidlc-docs/inception.md)
 - [Diagnóstico inicial dos dados](aidlc-docs/data-assessment.md)
 - [Decisões de arquitetura](aidlc-docs/architecture-decisions.md)
+- [Diagrama conceitual em PDF](output/pdf/arquitetura-conceitual-srag.pdf)
+- [Matriz do desafio e revisão de entrega](aidlc-docs/delivery-review.md)
+- [Preparação do acesso restrito pelo Caddy](aidlc-docs/hml-caddy.md)
 
-Os CSVs originais e segredos não devem ser publicados no Git. O acesso público será a agregações e relatórios, sem consultas a registros individuais.
+Os CSVs originais e segredos não devem ser publicados no Git. O repositório é público; os dados e relatórios em HML permanecem em acesso restrito. Agregações não equivalem automaticamente a dados seguros para divulgação pública.
 
 ## Validação automática
 
@@ -193,7 +196,11 @@ O último comando realiza uma geração real e consome a quota disponível; impr
 
 Testes locais: suíte Python e `tests/frontend-agent.cjs` usam dublês de Groq/banco/notícias. O servidor `tests/serve_api_fixture.py` habilita essa simulação explicitamente. Executar o teste de navegador não atesta acesso real aos provedores. Desenho e critérios AI-DLC: [U5 — agente e relatórios](aidlc-docs/units/U5-agent-reports.md).
 
-Pendências da entrega: inspeção humana do relatório e validação visual em HML, diagrama conceitual em PDF, revisão final da documentação e controle de acesso para exposição externa. Ocupação operacional de UTI, cobertura vacinal e mortalidade populacionais permanecem não calculáveis pelo CSV exclusivo; proxies estão identificados e não substituem essas definições.
+Pendências da entrega: inspeção humana do relatório e validação visual em HML, conclusão do DNS/Caddy autenticado e aceite final. Diagrama PDF entregue e documentação revisada; matriz de atendimento e limites em aidlc-docs/delivery-review.md. Ocupação operacional de UTI, cobertura vacinal e mortalidade populacionais permanecem não calculáveis pelo CSV exclusivo; proxies estão identificados e não substituem essas definições.
+
+### Diagrama reproduzível
+
+O PDF conceitual possui duas páginas: arquitetura e fluxo de dados/governança. Mostra orquestrador, três tools, Groq, PostgreSQL, notícias, auditoria e componentes pendentes. Fonte editável em build_architecture_pdf.py; requer reportlab apenas para gerar o documento (`python -m pip install reportlab`, seguido de `python build_architecture_pdf.py`). Nenhuma dependência foi adicionada à API ou às imagens HML. O PDF foi renderizado e inspecionado localmente; isso não substitui inspeção do relatório real.
 
 ### Evidência de integração real em HML — 12/11/2026
 
