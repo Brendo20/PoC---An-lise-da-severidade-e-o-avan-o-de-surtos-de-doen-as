@@ -107,6 +107,9 @@ def render_report(report: dict) -> str:
         parts.append('</tr>')
     parts.append('</tbody></table><p class="small">Crescimento: (últimos sete dias / sete anteriores − um) × cem. Letalidade: óbitos por SRAG / desfechos conhecidos. UTI e vacinação: respostas sim / respostas sim ou não; ignorados e vazios são desconhecidos. Mortalidade populacional não calculável nesta base.</p></section>')
     parts.append('<section><h2>Análise histórica do recorte</h2>')
+    parts.append('<p class="small">Interpretação histórica limitada a regras determinísticas e às tendências calculadas; notícias atuais são comentadas em seção separada.</p>')
+    if report.get('publication_review'):
+        parts.append('<p><strong>Narrativa anterior retirada na revisão de consistência. Arquivos originais preservados para auditoria.</strong></p>')
     analysis = report.get('analysis')
     parts.append('<p>' + escape(analysis['historical_commentary'] if analysis else 'Comentário do LLM indisponível ou rejeitado pela validação. Os dados e gráficos abaixo são determinísticos.') + '</p></section>')
     for kind, label in [('daily', 'Casos diários — últimos trinta dias da referência'), ('monthly', 'Casos mensais — últimos doze meses da referência')]:

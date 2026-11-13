@@ -35,3 +35,9 @@ Testar provider sem chamada externa real, cabeçalhos/erro sanitizado/limites; p
 Em 12/11/2026, check_agent_hml.py na VM retornou complete para o relatório 62a21130022b4e8296737c20a2de4972. Três rodadas de ferramentas, cinco notícias, narrativa validada, nenhum aviso ou erro de provedor. Prompt v5-targeted-repair, snapshot srag-ec77679e6022ca66-2019-12-28-v1.0.0 e carga 2026-11-12T12:45:32.573171+00:00. Primeira redação rejeitada por números em current_commentary; segunda aceita. Dezoito eventos de auditoria.
 
 Gate de integração real atendido nessa execução: o teste confere métricas, séries e dois gráficos. Pendem leitura humana da narrativa e validação visual do relatório no ambiente real. Não equivale a autorização de divulgação pública dos dados ou a garantia de que todas as gerações futuras serão completas. Evidência comunicada pelo operador, distinta dos sessenta testes Python locais.
+
+### Gate semântico reaberto em 13/11/2026
+
+Revisão pública confirmou acesso, filtros e gráficos, mas encontrou no comentário histórico do relatório antigo estabilidade de indicadores e impacto da vacinação que não são demonstrados pelo recorte. Guardrails anteriores de schema, números, palavras e tendências eram insuficientes para essa afirmação livre. Não considerar a narrativa antiga semanticamente aprovada.
+
+v7 calcula historical_commentary a partir da direção do crescimento realmente disponível e de explicações fixas dos denominadores/limites. O campo usa enum com o texto permitido e o validador exige igualdade exata. Esse trecho histórico é explicitamente determinístico; o LLM comenta notícias atuais em campo separado. Não atribuir autoria livre desse trecho ao modelo. Relatórios antigos incompatíveis são projetados como parciais, com narrativa retirada no JSON/HTML público e arquivo original preservado. Três regressões semânticas adicionadas; novo aceite em HML pendente.

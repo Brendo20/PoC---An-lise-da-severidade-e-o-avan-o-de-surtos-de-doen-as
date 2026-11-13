@@ -30,3 +30,4 @@ jobs:
           node --check tests/frontend-tooltips.cjs
           node --check tests/frontend-api.cjs
           node --check tests/frontend-agent.cjs
+          node --check tests/frontend-public.cjs

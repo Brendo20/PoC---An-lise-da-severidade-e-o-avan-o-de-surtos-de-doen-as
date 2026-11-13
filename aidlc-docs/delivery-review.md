@@ -2,6 +2,8 @@
 
 Revisão de 13/11/2026. Implementação e evidência de execução real em HML são distintas de aceite humano do conteúdo e de exposição externa. Relatório completo significa conclusão do fluxo técnico com suas limitações explícitas; não significa que indicadores populacionais ausentes foram calculados.
 
+**Gate semântico reaberto na revisão final:** o relatório antigo afirmava estabilidade de percentuais e impacto vacinal sem dados para isso. A v7 corrige por histórico determinístico exigido em schema/validação e retira narrativas antigas incompatíveis da projeção pública. Arquivos originais preservados; implantação e novo aceite real ainda pendentes. Não enviar como entrega final até esse gate passar.
+
 ## Matriz do desafio
 
 | Requisito | Evidência / situação |
@@ -18,27 +20,29 @@ Revisão de 13/11/2026. Implementação e evidência de execução real em HML s
 | Relatório automatizado | HTML/JSON com números e gráficos determinísticos, narrativa validada e auditoria. Execução completa confirmada pelo operador em 12/11/2026. |
 | Governança e transparência | Snapshot, carga, versões, fontes, eventos, hashes, tokens e rejeições. Sem log de raciocínio ou rascunhos rejeitados. |
 | Guardrails | Ferramentas fechadas, escopo fixado, validação de saída e modo parcial. Rejeição e reparo observados na execução real. Não provam correção semântica de toda frase. |
-| Dados sensíveis | Banco contém agregações, sem registros individuais; segredo fora do Git/frontend. Supressão primária não elimina inferência entre agregados sobrepostos: acesso restrito. |
-| Clean Code e verificação | Módulos de ingestão, repositório, API, provedor, agente e relatório separados. Sessenta testes Python locais e testes de navegador documentados. |
-| Repositório GitHub público | Código, documentação e exemplos sem chaves/CSVs. Relatórios de execução permanecem privados em HML. |
+| Dados sensíveis | Banco contém agregações, sem registros individuais; segredo fora do Git/frontend. Acesso público autorizado pelo usuário; supressão primária não elimina inferência entre agregados sobrepostos. |
+| Clean Code e verificação | Módulos separados, 63 testes Python locais e testes de navegador documentados. Regressões semânticas adicionadas após a leitura do relatório real. |
+| Repositório GitHub público | Código, documentação e exemplos sem chaves/CSVs. Arquivos do volume internos; relatórios acessíveis por endpoints públicos. |
 | Diagrama conceitual em PDF | Entregue em output/pdf/arquitetura-conceitual-srag.pdf, com duas páginas. Gerador versionado. |
-| Acesso de homologação | Domínio escolhido: poc-srag.estacaolab.com.br. DNS, Caddy, autenticação e inspeção visual ainda pendentes de validação. |
+| Acesso de homologação | poc-srag.estacaolab.com.br com HTTPS público e HTTP 200 confirmados. Sem senha por decisão do usuário. Revisão visual de acesso, filtros e gráficos passou em 360/1100px. |
 
 ## Inspeção humana do resultado existente
 
-Usar o relatório 62a21130022b4e8296737c20a2de4972, sem gerar outro para revisão:
+O relatório 62a21130022b4e8296737c20a2de4972 foi usado na revisão e reprovado semanticamente. Para o aceite final, usar um novo relatório gerado após implantação da v7:
 
-1. Abrir dashboard e relatório em acesso restrito. Conferir identidade, período e carga.
+1. Abrir dashboard e relatório pelo domínio público. Conferir identidade, período e carga.
 2. Verificar os dois gráficos, lacunas e mês parcial; conferir visualização em desktop e celular.
 3. Ler a narrativa: consistência com os dados, limites dos indicadores, distinção entre notícias atuais e histórico, ausência de atribuição causal indevida.
 4. Abrir as referências e conferir correspondência com títulos/fontes do relatório; a existência de um link não valida toda a interpretação do LLM.
 5. Conferir mudanças de filtros no painel e a indicação de que relatório depende da seleção usada na geração. Trocar filtros não deve consumir quota automaticamente.
-6. Registrar aceite ou problemas observados em aidlc-docs/progress.md. A inspeção ainda não foi executada no ambiente real pelo agente local.
+6. Registrar aceite ou problemas observados em aidlc-docs/progress.md. A revisão pública em 13/11 foi executada e encontrou a falha histórica; um novo resultado corrigido ainda precisa ser conferido.
 
-## Acesso externo restrito
+## Acesso externo público
 
 Consultar hml-caddy.md antes de alterar o proxy compartilhado. O nome escolhido não prova que o DNS aponta para a VM. Não expor 8766 ou PostgreSQL ao público. Manter o alias da API na rede Docker e autenticação para todo o site, inclusive endpoints de relatórios. Não liberar dados publicamente com base somente na supressão primária.
 
+Atualização: DNS e HTTPS confirmados, sem autenticação por decisão posterior do usuário. O parágrafo acima registra a recomendação inicial. Não presumir que autorização de publicação resolve todos os riscos de privacidade. Não reconstruir o proxy para atualizar a aplicação.
+
 ## Entrega final
 
-PDF disponível e integração real aceita. Ainda faltam revisão humana/visual, apontamento DNS e proxy autenticado. Backup/retenção do volume e rollback precisam ser validados antes de produção. A entrega deve declarar honestamente os indicadores originais não calculáveis, sem substituí-los silenciosamente por proxies.
+PDF e texto de envio disponíveis; DNS/HTTPS públicos aceitos. A revisão humana encontrou falha semântica: aguardar implantação e aceite da v7 antes do envio. Backup/retenção do volume e rollback precisam ser validados antes de produção. A entrega deve declarar honestamente os indicadores originais não calculáveis, sem substituí-los silenciosamente por proxies.

@@ -56,6 +56,10 @@ def main():
         'metrics': report['metrics'], 'news': {'status': report['news']['status'], 'articles': [
             {key: article[key] for key in ('id', 'title', 'excerpt', 'source', 'published_at')}
             for article in report['news']['articles']]}}
+    import srag.agent as policy
+    if hasattr(policy, 'historical_commentary'):
+        evidence['historical_commentary_verified'] = policy.historical_commentary(report['metrics'])
+        schema['properties']['historical_commentary']['enum'] = [evidence['historical_commentary_verified']]
     client = GroqClient()
     draft = None
     try:

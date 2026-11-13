@@ -1,5 +1,13 @@
 # Registro AI-DLC
 
+## 13/11/2026 - Preparação de envio e falha semântica encontrada na revisão final
+- Operador confirmou Caddy 2.11.7, DNS correto e HTTPS 200 em 163.176.51.25. Publicação sem senha foi solicitada explicitamente; documentação/modelo atualizados para acesso público, mantendo portas internas e limites existentes. Nenhuma autenticação reintroduzida.
+- Revisão local do site real via navegador somente leitura passou: 360/1100px, 48.866 casos, SP x MG, dois gráficos, três caminhos privados com 404 e zero erros JavaScript. Nenhuma geração LLM disparada. Evidências locais ignoradas pelo Git.
+- Leitura do relatório antigo encontrou afirmações não demonstradas: estabilidade de percentuais e impacto vacinal. O aceite técnico anterior não validou essas frases. Gate semântico reaberto, com limitação comunicada ao usuário antes do envio.
+- Implementada v7-grounded-history: histórico por regras, enum no schema, igualdade local e evento de conferência. Notícias continuam com comentário LLM atribuído aos títulos/resumos. Relatórios legados incompatíveis têm análise retirada na projeção pública; arquivos originais preservados para auditoria.
+- 63 testes Python passaram, incluindo regressões da extrapolação, schema, tendências e imutabilidade de legado. PDF atualizado e renderizado com acesso público e estado real de revisão. Pacote e texto de envio em SUBMISSION.md, marcados para uso após aceite v7 em HML. Nenhum envio ao avaliador realizado.
+- Próximo gate: rebuild somente da API, geração real v7, leitura do novo resultado e conferência da retirada da narrativa antiga. Não declarar entrega final pronta antes desse gate.
+
 ## 13/11/2026 — PDF conceitual entregue e acesso externo preparado
 - Usuário autorizou continuar. Gerado output/pdf/arquitetura-conceitual-srag.pdf, duas páginas: orquestrador, ferramentas, LLM, PostgreSQL, notícias, fluxo de carga, auditoria, guardrails e limites. Fonte reproduzível build_architecture_pdf.py; sem novas dependências de runtime da API.
 - PDF renderizado com Poppler e inspecionado visualmente; layout de setas ajustado para não atravessar blocos. Extração confirmou duas páginas com texto selecionável. Imagens intermediárias em tmp/pdfs, fora do Git.

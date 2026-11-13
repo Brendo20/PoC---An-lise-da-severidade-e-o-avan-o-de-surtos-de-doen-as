@@ -1,5 +1,11 @@
 # Acesso restrito pelo Caddy - preparação
 
+## Estado atual em 13/11/2026
+
+O usuário decidiu publicar sem senha. Caddy 2.11.7 e mount /srv/portais/infra/proxy/Caddyfile -> /etc/caddy/Caddyfile confirmados. API acessível pelo alias interno e readiness correto. Operador validou e recarregou o bloco sem basic_auth; chamada HTTPS com verificação padrão retornou HTTP 200 no IP 163.176.51.25. Inicialmente o DNS local usava destino antigo, depois resolveu corretamente. Modelo atual em hml-caddy.caddy.example reflete acesso público; as instruções autenticadas abaixo são histórico da proposta inicial, não configuração ativa.
+
+O backend e o banco continuam internos, mas dashboard e endpoints de relatórios estão expostos sem autenticação. noindex não limita acesso. Nenhum domínio adicional ou porta do banco foi publicado. A decisão pública não elimina riscos de inferência ou consumo anônimo de quota; os limites existentes são por processo.
+
 Domínio informado pelo usuário em 13/11/2026: poc-srag.estacaolab.com.br. A escolha autoriza preparar esse host na homologação. Ainda não foram alterados DNS, Caddyfile ou container do proxy.
 
 Consulta DNS local em 13/11/2026 retornou registros A 216.198.79.65 e 64.29.17.1; não foi estabelecido que correspondem ao IPv4 público da VM HML. Confirmar o IP público da instância e ajustar somente esse subdomínio no provedor DNS, preservando os demais portais. Se houver CDN/proxy intermediário, verificar a rota efetiva; não inferir o destino pelo nome do host.

@@ -339,7 +339,7 @@
       'Crescimento = (casos nos últimos 7 dias / casos nos 7 anteriores − 1) × 100. Denominador zero não produz uma taxa.',
       'Internação em UTI = UTI=1 / UTI em {1,2} × 100, entre casos notificados com informação conhecida. Não há filtro adicional HOSPITAL=1: os denominadores são os mesmos do estudo do recorte e não de uma coorte estritamente hospitalizada. Não mede capacidade ou ocupação operacional.',
       'Vacinação contra gripe entre casos = VACINA=1 / VACINA em {1,2} × 100. Respostas vazias e ignoradas são desconhecidas, não não vacinadas. Datas posteriores aos sintomas impedem presumir proteção prévia; esta proporção descreve o campo declarado, não eficácia vacinal ou cobertura populacional.',
-      'Contagens de 1 a 4 são suprimidas; zeros permanecem zeros. Supressão primária não elimina inferências entre agregados sobrepostos. Dados restritos à validação local; não publicar este snapshot sem revisão adicional.',
+      'Contagens de 1 a 4 são suprimidas; zeros permanecem zeros. Supressão primária não elimina inferências entre agregados sobrepostos. A demonstração em HML está pública; isso não equivale a uma garantia completa de privacidade.',
       `Versão das métricas: ${data.metric_version}. Snapshot: ${data.snapshot_id}.`,
     ].forEach(text => audit.append(element('p', '', text)));
     const quality = element('section', 'scope-quality'); quality.id = 'sr-scope-quality';
@@ -354,6 +354,7 @@
     });
     audit.prepend(quality);
     $('#sr-build').textContent = `Snapshot ${data.snapshot_id.split('-').slice(0, 2).join('-')} · métricas v${data.metric_version}`;
+    $('#sr-build').nextElementSibling.textContent = dataSource === 'api' ? 'AI-DLC · dados históricos · HML' : 'AI-DLC · prévia local';
   }
 
   function render() {

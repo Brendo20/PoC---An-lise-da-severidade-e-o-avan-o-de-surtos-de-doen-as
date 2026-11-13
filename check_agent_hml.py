@@ -2,6 +2,7 @@
 import json
 import urllib.error
 import urllib.request
+from srag.agent import historical_commentary
 
 BASE = 'http://127.0.0.1:8000'
 
@@ -34,13 +35,25 @@ assert report['snapshot_id'] == dashboard['snapshot_id'], 'Snapshot divergente'
 assert report['metrics']['Brasil'] == dashboard['territories']['Brasil']['metrics'], 'Métricas divergentes'
 assert len(report['series']['Brasil']['daily']) == 30
 assert len(report['series']['Brasil']['monthly']) == 12
+if report['analysis'] is not None:
+    assert report['analysis']['historical_commentary'] == historical_commentary(report['metrics']), 'Histórico divergente das regras'
 with urllib.request.urlopen(BASE + '/api/reports/' + report['report_id'] + '/html', timeout=15) as response:
     assert response.read().count(b'<svg ') == 2, 'Relatório sem os dois gráficos'
+legacy_withdrawn = None
+try:
+    legacy = get('/api/reports/62a21130022b4e8296737c20a2de4972')
+    legacy_withdrawn = legacy['analysis'] is None and legacy.get('publication_review', {}).get('status') == 'withdrawn'
+    assert legacy_withdrawn, 'Narrativa legada incompatível ainda publicada'
+except urllib.error.HTTPError as error:
+    if error.code != 404:
+        raise
 print(json.dumps({
     'status': report['status'], 'report_id': report['report_id'], 'modelo': report['model'],
     'prompt_version': report['prompt_version'],
     'snapshot_id': report['snapshot_id'], 'carga': report['loaded_at'],
     'noticias': len(report['news']['articles']), 'narrativa_validada': report['analysis'] is not None,
+    'historico_conferido': any(event.get('historical_statement') == 'exact_match' for event in report['audit']),
+    'narrativa_legada_retirada': legacy_withdrawn,
     'avisos': report['warnings'], 'cache': report['cached'], 'eventos_auditoria': len(report['audit']),
     'rodadas_ferramentas': sum(event['event'] == 'llm_tool_round' for event in report['audit']),
     'rejeicoes_narrativa': [{key: event.get(key) for key in ('attempt', 'reason', 'field')}

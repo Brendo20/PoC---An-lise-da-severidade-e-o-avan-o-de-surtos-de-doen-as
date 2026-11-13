@@ -12,7 +12,7 @@ from uuid import uuid4
 from srag.aggregate import BY_UF
 from srag.database import TERRITORIES
 from srag.groq_client import GroqClient
-from srag.agent import ReportAgent
+from srag.agent import ReportAgent, validate_analysis, validation_diagnostic
 from srag.news import NewsSearch
 
 
@@ -53,10 +53,23 @@ class ReportStore:
             json.dump(report, stream, ensure_ascii=False, indent=2)
 
     def read(self, identifier: str) -> dict:
-        return json.loads((self.folder(identifier) / "report.json").read_text(encoding="utf-8"))
+        report = json.loads((self.folder(identifier) / "report.json").read_text(encoding="utf-8"))
+        if report.get('analysis') is not None:
+            try:
+                validate_analysis(report['analysis'], report['metrics'], report['news'])
+            except (ValueError, KeyError, TypeError) as error:
+                # Projeção de publicação; preservar arquivo original e auditoria imutáveis.
+                report['publication_review'] = {'status': 'withdrawn', **validation_diagnostic(error)}
+                report['analysis'] = None
+                report['status'] = 'partial'
+                report['warnings'] = sorted(set(report.get('warnings', []) + ['narrative_withdrawn_on_review']))
+        return report
 
     def html(self, identifier: str) -> str:
-        self.read(identifier)
+        report = self.read(identifier)
+        if report.get('publication_review'):
+            from srag.report_html import render_report
+            return render_report(report)
         return (self.folder(identifier) / "report.html").read_text(encoding="utf-8")
 
 

@@ -93,13 +93,13 @@ def architecture(c):
     box(c, 415, 360, 155, 65, 'Tool: métricas', 'consultar_metricas<br/>Agregados por território')
     box(c, 415, 275, 155, 65, 'Tool: séries', 'consultar_series<br/>30 dias e 12 meses')
     box(c, 415, 190, 155, 65, 'Tool: notícias', 'buscar_noticias<br/>Até cinco títulos/resumos')
-    box(c, 225, 190, 155, 70, 'Relatório validado', 'Schema, tendências e fontes<br/>HTML / JSON + dois gráficos<br/>Números determinísticos')
+    box(c, 225, 190, 155, 70, 'Relatório validado', 'Histórico por regras<br/>Notícias: comentário do LLM<br/>HTML / JSON + dois gráficos')
 
     box(c, 640, 425, 169, 75, 'LLM externo / Groq', 'openai/gpt-oss-20b<br/>Function calling + redação<br/>Chave somente no backend', PURPLE, '#F6F1FC')
     box(c, 640, 295, 169, 97, 'PostgreSQL 16 / VM', 'Banco exclusivo da PoC<br/>Snapshot e loaded_at<br/>Reader: somente SELECT<br/>Consultas parametrizadas', BLUE)
     box(c, 640, 173, 169, 101, 'Fontes externas / HTTPS', 'Ministério da Saúde<br/>Agência Fiocruz<br/>Google News RSS (descoberta)<br/>URLs de feeds fixas', ORANGE, '#FCF7EE')
     box(c, 32, 190, 145, 88, 'Volume privado / VM', 'report.html e report.json<br/>audit.jsonl por execução<br/>Fora do repositório<br/>Sem dados individuais')
-    box(c, 32, 330, 145, 76, 'Acesso atual', 'Loopback na VM: 8766<br/>Caddy + acesso restrito:<br/>configuração pendente', MUTED, '#FFFFFF', dashed=True)
+    box(c, 32, 330, 145, 76, 'HTTPS / Caddy', 'poc-srag.estacaolab.com.br<br/>HTTPS público, sem senha<br/>Caddy 2.11.7', BLUE, '#FFFFFF')
 
     arrow(c, [(177, 468), (225, 468)])
     paragraph(c, 'HTTP', 183, 484, 38, 7, MUTED)
@@ -120,7 +120,7 @@ def architecture(c):
               'A redação recebe métricas e notícias; gráficos usam as séries completas do banco.',
               32, 116, W - 64, 9, max_height=45)
     paragraph(c, 'Azul: serviços e dados da PoC. Roxo: inferência externa. Ocre: notícias externas. '
-              'Tracejado: exposição externa ainda pendente. O banco e o volume também estão na VM.',
+              'Acesso público via Caddy; banco e arquivos do volume permanecem na VM. API publica os relatórios por endpoint.',
               32, 69, W - 64, 8, MUTED, max_height=30)
     c.showPage()
 
@@ -147,7 +147,7 @@ def governance(c):
         'Modelo, prompt, snapshot, referência histórica, carga e fontes preservados no relatório.<br/><br/>'
         'Não registrar chaves, DSNs, raciocínio interno ou rascunhos rejeitados.')
     box(c, 296, 184, 248, 191, 'Guardrails e operação',
-        'Ferramentas fechadas, sem argumentos livres. SQL parametrizado; timeout de leitura.<br/><br/>'
+        'Tools fechadas; SQL parametrizado. Histórico por regras com validação de igualdade. LLM comenta notícias.<br/><br/>'
         'Três etapas de coleta e uma redação; no máximo um reparo. Validação de texto, tendências e referências.<br/><br/>'
         'Uma geração simultânea, intervalo de um minuto e cache completo de cinco minutos.<br/><br/>'
         'Quota ou saída inválida: relatório parcial explícito. Um worker e uma réplica.')
@@ -155,12 +155,13 @@ def governance(c):
         'Crescimento de casos e letalidade têm definições e denominadores explícitos.<br/><br/>'
         'Internação em UTI entre casos não mede ocupação operacional de leitos.<br/><br/>'
         'Vacinação entre casos não mede cobertura populacional nem eficácia.<br/><br/>'
-        'Notícias: títulos/resumos recentes, sem leitura integral. Proteção contra inferência e acesso externo ainda exigem revisão.')
+        'Notícias: títulos/resumos recentes, sem leitura integral. Acesso sem autenticação; supressão primária não elimina risco de inferência.')
     box(c, 32, 49, 776, 113, 'Aceite real de integração / HML em 12/11/2026',
         'Relatório: 62a21130022b4e8296737c20a2de4972. Status complete; três tools; cinco notícias; narrativa validada.<br/>'
         'Primeira redação rejeitada por números no comentário atual; reparo único aceito. Dezoito eventos de auditoria.<br/>'
         'O teste confere métricas iguais ao dashboard, séries de 30 dias e 12 meses e dois gráficos SVG no HTML.<br/>'
-        'Evidência informada pelo operador. Não equivale a revisão semântica integral, alta disponibilidade ou liberação pública.<br/>'
+        'Revisão humana em 13/11 encontrou inferências indevidas; correção histórica por regras aguarda validação em HML.<br/>'
+        'Evidência informada pelo operador. Não equivale a garantia semântica integral, alta disponibilidade ou revisão completa de privacidade.<br/>'
         'Fontes de arquitetura: código em src/srag/, compose.hml.yml e decisões AI-DLC versionadas no repositório.',
         fill='#EDF5EF', accent='#366D4E')
     c.showPage()

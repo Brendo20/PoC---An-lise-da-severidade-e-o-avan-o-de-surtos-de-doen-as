@@ -2,7 +2,7 @@
 import json
 from datetime import date, timedelta
 
-from srag.agent import trend
+from srag.agent import historical_commentary, trend
 
 
 class Repository:
@@ -53,7 +53,7 @@ class Client:
         else:
             # Derivar tendências exclusivamente do resultado controlado da ferramenta.
             metrics = json.loads(messages[1]["content"])["metrics"]
-            message = {"content": json.dumps({"historical_commentary": "O recorte apresenta variação dos registros e exige atenção aos dados ausentes.",
+            message = {"content": json.dumps({"historical_commentary": historical_commentary(metrics),
                 "current_commentary": "Os títulos recentes abordam SRAG; a leitura integral das matérias não foi realizada.",
                 "cited_news_ids": ["news-fixture"],
                 "growth_trends": [{"territory": t, "trend": trend(m["growth"])} for t, m in metrics.items()]})}

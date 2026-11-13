@@ -4,7 +4,9 @@ Repositório: [Brendo20 — PoC de análise de surtos](https://github.com/Brendo
 
 Projeto de relatórios epidemiológicos com ferramentas determinísticas e agente de IA, desenvolvido com AI-DLC.
 
-Status: fluxo completo confirmado pelo operador em HML em 12/11/2026: PostgreSQL, três chamadas de ferramentas na Groq, cinco notícias e relatório completo com narrativa validada. A primeira redação foi rejeitada por números no comentário atual e o reparo único passou. Esse aceite de integração não equivale a revisão semântica integral ou liberação pública.
+**Demonstração:** https://poc-srag.estacaolab.com.br/ - HTTPS público, sem senha, por decisão do usuário.
+
+Status da entrega em 13/11/2026: integração real e acesso público funcionam. A revisão humana encontrou inferências históricas indevidas no relatório anterior; a correção v7 restringe o histórico a regras verificáveis e aguarda implantação/novo aceite em HML. [Pacote e texto de envio](SUBMISSION.md). Não apresentar o relatório anterior como exemplo final aprovado.
 
 ## Documentação
 - [Requisitos e critérios de aceite](aidlc-docs/inception.md)
@@ -12,9 +14,9 @@ Status: fluxo completo confirmado pelo operador em HML em 12/11/2026: PostgreSQL
 - [Decisões de arquitetura](aidlc-docs/architecture-decisions.md)
 - [Diagrama conceitual em PDF](output/pdf/arquitetura-conceitual-srag.pdf)
 - [Matriz do desafio e revisão de entrega](aidlc-docs/delivery-review.md)
-- [Preparação do acesso restrito pelo Caddy](aidlc-docs/hml-caddy.md)
+- [Acesso público pelo Caddy](aidlc-docs/hml-caddy.md)
 
-Os CSVs originais e segredos não devem ser publicados no Git. O repositório é público; os dados e relatórios em HML permanecem em acesso restrito. Agregações não equivalem automaticamente a dados seguros para divulgação pública.
+CSVs originais e segredos ficam fora do Git. Dashboard e endpoints de relatórios estão públicos; arquivos do volume e PostgreSQL permanecem internos. Supressão primária não elimina inferência entre agregados: não equivale a uma garantia completa de privacidade. Não há autenticação nesta demonstração; geração depende das quotas da Groq e dos limites do processo.
 
 ## Validação automática
 
@@ -64,8 +66,8 @@ Mapa, indicadores e gráficos usam arquivos locais, sem CDN ou dependência de r
 - UTI e vacinação mostram numerador, denominador e percentual desconhecido. Não equivalem a ocupação operacional ou cobertura populacional, não calculáveis no escopo exclusivo do CSV.
 - Mapas e menus usam um estado único de filtros. Seleção principal/comparação atualiza cards, comparativos, gráficos, tabelas, legendas, resumo e qualidade do recorte. Os botões do mapa indicam qual território será alterado. A janela temporal é fixa e comum aos territórios; não há filtro de período nesta etapa.
 - A prévia estática apresenta resumo determinístico. No serviço API, um botão separado aciona o agente e gera relatório com números, dois gráficos e notícias, sem chamadas automáticas ao trocar filtros.
-- Contagens pequenas são suprimidas; proteção complementar contra inferência ainda pendente. **Snapshot restrito ao desenvolvimento local, ignorado pelo Git e não liberado para publicação.**
-- Sem recortes municipais ou autenticação de aplicação; acesso restrito a HML. Carga PostgreSQL e API existentes confirmadas pelo operador.
+- Contagens pequenas são suprimidas; proteção complementar contra inferência ainda pendente. Snapshot em arquivo ignorado pelo Git; agregados disponíveis publicamente pela API.
+- Sem recortes municipais ou autenticação. HML pública para demonstração; não constitui implantação de produção.
 
 ### Validação do frontend
 
@@ -133,7 +135,7 @@ curl --fail --silent --show-error http://127.0.0.1:8766/health/ready
 
 Não execute `docker compose config` sem `--quiet` para compartilhar saída: a configuração expandida contém segredos. O build exclui `.env`, CSVs e snapshots. A aplicação usa o PostgreSQL existente e um volume privado para relatórios/auditoria. Porta apenas em loopback, rede `portais-net`, 256 MiB e 0,5 CPU, sem root e filesystem somente leitura, exceto volume e tmpfs. Não altera Caddy. Após o build, confirme healthcheck e os números reais na VM antes de considerar implantação concluída.
 
-O serviço está interno, sem autenticação de aplicação nesta etapa. Não adicionar rota pública no Caddy antes de definir domínio e controle de acesso de HML. O snapshot continua sem liberação para divulgação pública.
+O serviço é publicado por Caddy em poc-srag.estacaolab.com.br, sem senha por decisão explícita do usuário. A porta 8766 continua em loopback e o banco não é publicado. noindex solicita ausência de indexação, mas não controla acesso. Histórico operacional em aidlc-docs/hml-caddy.md.
 
 ### Origem e falhas
 
@@ -196,7 +198,7 @@ O último comando realiza uma geração real e consome a quota disponível; impr
 
 Testes locais: suíte Python e `tests/frontend-agent.cjs` usam dublês de Groq/banco/notícias. O servidor `tests/serve_api_fixture.py` habilita essa simulação explicitamente. Executar o teste de navegador não atesta acesso real aos provedores. Desenho e critérios AI-DLC: [U5 — agente e relatórios](aidlc-docs/units/U5-agent-reports.md).
 
-Pendências da entrega: inspeção humana do relatório e validação visual em HML, conclusão do DNS/Caddy autenticado e aceite final. Diagrama PDF entregue e documentação revisada; matriz de atendimento e limites em aidlc-docs/delivery-review.md. Ocupação operacional de UTI, cobertura vacinal e mortalidade populacionais permanecem não calculáveis pelo CSV exclusivo; proxies estão identificados e não substituem essas definições.
+Pendência final: implantar e validar a correção semântica v7, gerar e ler um novo relatório. DNS/Caddy públicos foram validados e a revisão visual somente leitura passou em desktop/celular. Diagrama PDF e texto de envio disponíveis. Ocupação operacional de UTI, cobertura vacinal e mortalidade populacionais permanecem não calculáveis pelo CSV exclusivo; proxies não substituem essas definições.
 
 ### Diagrama reproduzível
 
@@ -207,3 +209,5 @@ O PDF conceitual possui duas páginas: arquitetura e fluxo de dados/governança.
 Operador confirmou build ARM64 saudável e execução de `check_agent_hml.py` com `status=complete`, narrativa validada, três rodadas de ferramentas, cinco notícias, nenhum erro de provedor e nenhum aviso. Relatório `62a21130022b4e8296737c20a2de4972`, modelo `openai/gpt-oss-20b`, prompt `srag-2019-v5-targeted-repair`, snapshot `srag-ec77679e6022ca66-2019-12-28-v1.0.0`, carga `2026-11-12T12:45:32.573171+00:00`. Auditoria com dezoito eventos: primeira narrativa rejeitada por `narrative_numbers` em `current_commentary`; segunda aceita. O teste também confere igualdade das métricas com o dashboard, séries de trinta dias/doze meses e dois SVGs no HTML. Trata-se de evidência fornecida pelo operador; o ambiente local não acessou a VM.
 
 HTML interno: `/api/reports/62a21130022b4e8296737c20a2de4972/html`. O arquivo e sua auditoria permanecem no volume privado de HML, fora do repositório público. Aceite da integração real registrado em [U5](aidlc-docs/units/U5-agent-reports.md); revisão de conteúdo, consistência semântica e exposição externa continuam separadas.
+
+**Revisão posterior em 13/11:** o comentário histórico desse relatório inferia estabilidade de percentuais e impacto da vacinação sem evidência. O aceite anterior foi apenas técnico; ele não deve ser usado como exemplo final. Na v7, histórico é produzido por regras determinísticas, limitado ao crescimento semanal e às definições dos indicadores; schema e validador exigem igualdade com esse texto. O LLM continua comentando as notícias atuais. Relatórios legados incompatíveis têm narrativa retirada na projeção pública, mantendo os arquivos originais intactos. Sessenta e três testes locais incluem regressões dessa falha. A inspeção pública em 360/1100px passou para acesso, comparação, gráficos, bloqueio de arquivos privados e ausência de erros JavaScript, sem novas chamadas ao modelo.

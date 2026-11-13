@@ -7,7 +7,7 @@ from unittest import TestCase
 from fastapi.testclient import TestClient
 
 from agent_fixtures import Client, News, Repository
-from srag.agent import AnalysisValidationError, ReportAgent, output_schema, validate_analysis, validation_diagnostic
+from srag.agent import AnalysisValidationError, ReportAgent, historical_commentary, output_schema, validate_analysis, validation_diagnostic
 from srag.api import create_app
 from srag.groq_client import ProviderError
 from srag.report_store import ReportError, ReportService, ReportStore
@@ -225,3 +225,38 @@ class ReportTests(TestCase):
             self.assertNotIn('pattern', schema['properties'][field])
         self.assertNotIn('pattern', schema['properties']['cited_news_ids']['items'])
         self.assertEqual(schema['properties']['growth_trends']['items']['properties']['territory']['enum'], ['Brasil'])
+
+    def test_historical_commentary_matches_computed_trends_and_schema_enum(self):
+        metrics = {'SP': self.repository.metrics('fixture', 'SP'), 'MG': self.repository.metrics('fixture', 'MG')}
+        metrics['MG']['growth'] = {'status': 'available', 'value': 10}
+        text = historical_commentary(metrics)
+        self.assertIn('Para São Paulo, houve queda', text)
+        self.assertIn('Para Minas Gerais, houve aumento', text)
+        self.assertIn('não há comparação temporal desses percentuais', text)
+        self.assertEqual(output_schema(['SP', 'MG'], metrics)['properties']['historical_commentary']['enum'], [text])
+
+    def test_unsupported_historical_stability_or_vaccine_effect_is_rejected(self):
+        report = self.generate()
+        for claim in ('A cobertura vacinal demonstrou impacto na redução de casos graves.',
+                      'A taxa de mortalidade e as internações mantiveram níveis estáveis.'):
+            draft = deepcopy(report['analysis']); draft['historical_commentary'] = claim
+            with self.assertRaises(ValueError) as error:
+                validate_analysis(draft, report['metrics'], report['news'])
+            self.assertEqual(str(error.exception), 'historical_statement_mismatch')
+
+    def test_legacy_publication_withdraws_invalid_text_without_modifying_evidence(self):
+        report = self.generate()
+        identifier, _, _ = self.store.start()
+        legacy = deepcopy(report); legacy['report_id'] = identifier
+        legacy['analysis']['historical_commentary'] = 'A cobertura vacinal demonstrou impacto na redução de casos graves.'
+        legacy['prompt_version'] = 'srag-2019-v5-targeted-repair'
+        self.store.save(legacy, render_report(legacy))
+        path = self.store.folder(identifier) / 'report.json'
+        original = path.read_bytes()
+        reviewed = self.store.read(identifier)
+        self.assertEqual(reviewed['status'], 'partial')
+        self.assertIsNone(reviewed['analysis'])
+        self.assertEqual(reviewed['publication_review']['reason'], 'historical_statement_mismatch')
+        self.assertNotIn('demonstrou impacto', self.store.html(identifier))
+        self.assertIn('Narrativa anterior retirada', self.store.html(identifier))
+        self.assertEqual(path.read_bytes(), original)

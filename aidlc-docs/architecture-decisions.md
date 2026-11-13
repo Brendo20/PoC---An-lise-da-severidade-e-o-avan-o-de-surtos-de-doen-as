@@ -35,3 +35,9 @@ Gerações reais retornaram HTTP 400/tool_use_failed na primeira chamada, inclus
 ### Estado posterior validado e diagrama
 
 Em 12/11/2026 o operador confirmou relatório completo com três ferramentas, cinco notícias, narrativa aceita após um reparo e zero avisos; ver U5 e progress.md. Em 13/11/2026 o PDF conceitual foi gerado, renderizado e inspecionado: output/pdf/arquitetura-conceitual-srag.pdf. Componentes de acesso externo são identificados como pendentes. O documento representa o código atual e não a proposta inicial de worker LangGraph.
+
+## ADR-005 - Histórico determinístico e retirada de narrativas legadas
+
+Na revisão humana final, o comentário histórico do relatório completo extrapolava o que os dados medem. Decisão: controlar esse trecho por regras a partir das métricas efetivamente calculadas, com enum no schema e igualdade exata na validação local. Mantém consulta de ferramentas real e comentário LLM sobre notícias; não afirmar que o modelo produziu uma explicação histórica livre. Não inferir estabilidade de taxas sem séries próprias nem efeito vacinal de proporções entre casos.
+
+Relatórios armazenados continuam imutáveis. A projeção de publicação revalida narrativas pelas regras atuais e, em incompatibilidade, retorna status parcial, análise retirada e motivo. HTML antigo é re-renderizado nessa projeção; não apagar ou reescrever evidências originais. Nova versão precisa de implantação e aceite em HML. O acesso público sem senha foi uma decisão posterior explícita do usuário e não é revertido nesta correção.

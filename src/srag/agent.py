@@ -8,8 +8,9 @@ import time
 from datetime import datetime, timezone
 
 from srag.groq_client import ProviderError
+from srag.aggregate import STATES
 
-PROMPT_VERSION = "srag-2019-v5-targeted-repair"
+PROMPT_VERSION = "srag-2019-v7-grounded-history"
 TOOL_DESCRIPTIONS = {
     "consultar_metricas": "Consultar indicadores agregados dos territórios já selecionados e da carga fixada.",
     "consultar_series": "Consultar séries de trinta dias e doze meses dos territórios selecionados.",
@@ -33,6 +34,11 @@ current_commentary descreve somente os títulos/resumos atuais, com suas limita�
 notícias, use texto vazio e cited_news_ids vazio. growth_trends deve refletir a taxa consultada:
 increase se positiva, decrease se negativa, stable se zero, unavailable se não disponível.
 Não invente valores ausentes ou fontes. Não declare leitura integral das matérias."""
+NARRATIVE_SYSTEM += """
+historical_commentary deve copiar exatamente historical_commentary_verified das evidências.
+Esse texto foi calculado pelo servidor e não admite acréscimos ou reinterpretação.
+current_commentary deve atribuir observações aos títulos e resumos consultados, sem afirmar
+que o conteúdo foi verificado integralmente ou transformar notícias em causas do histórico."""
 NARRATIVE_SYSTEM += """
 Nos dois campos de comentário, não use anos, datas, números de boletins, percentuais ou
 nomes de doenças com algarismos. Use expressões como período histórico ou cenário atual.
@@ -66,6 +72,7 @@ REPAIR_HINTS = {
     "trend_mismatch": "Confira growth: valor positivo increase, negativo decrease, zero stable e status não disponível unavailable.",
     "invalid_json": "Retorne somente JSON válido conforme o schema, sem texto ou cercas de código.",
     "invalid_response": "Confira tipos e campos do JSON Schema e as evidências fornecidas.",
+    "historical_statement_mismatch": "Copie exatamente historical_commentary_verified, sem acrescentar afirmações históricas, estabilidade ou proteção vacinal.",
 }
 
 
@@ -90,8 +97,27 @@ def trend(metric: dict) -> str:
     return "increase" if metric["value"] > 0 else "decrease" if metric["value"] < 0 else "stable"
 
 
-def output_schema(territories: list[str]) -> dict:
-    return {"type": "object", "additionalProperties": False,
+def historical_commentary(metrics: dict) -> str:
+    """Interpretação restrita às tendências realmente calculadas; sem inferência causal."""
+    names = {uf: name for _, uf, name, _ in STATES}
+    sentences = []
+    for territory, values in metrics.items():
+        direction = trend(values['growth'])
+        label = names.get(territory, territory)
+        if direction == 'unavailable':
+            sentences.append(f'Para {label}, o crescimento semanal não é calculável no recorte.')
+        else:
+            description = {'increase': 'aumento', 'decrease': 'queda', 'stable': 'estabilidade'}[direction]
+            sentences.append(f'Para {label}, houve {description} de registros na última semana em comparação com a semana anterior.')
+    sentences.append('Letalidade, internação em UTI e vacinação são proporções entre casos com informação conhecida; '
+        'não há comparação temporal desses percentuais neste recorte. '
+        'Os dados não permitem estimar mortalidade populacional, ocupação de leitos ou cobertura da população. '
+        'A vacinação declarada entre casos não permite concluir proteção individual.')
+    return ' '.join(sentences)
+
+
+def output_schema(territories: list[str], metrics: dict | None = None) -> dict:
+    schema = {"type": "object", "additionalProperties": False,
             "required": ["historical_commentary", "current_commentary", "cited_news_ids", "growth_trends"],
             "properties": {
                 "historical_commentary": {"type": "string",
@@ -103,6 +129,9 @@ def output_schema(territories: list[str]) -> dict:
                     "required": ["territory", "trend"], "properties": {
                         "territory": {"type": "string", "enum": territories},
                         "trend": {"type": "string", "enum": ["increase", "decrease", "stable", "unavailable"]}}}}}}
+    if metrics is not None:
+        schema['properties']['historical_commentary']['enum'] = [historical_commentary(metrics)]
+    return schema
 
 
 def validate_analysis(analysis: dict, metrics: dict, news: dict) -> None:
@@ -118,6 +147,8 @@ def validate_analysis(analysis: dict, metrics: dict, news: dict) -> None:
                 raise AnalysisValidationError(code, key)
     if not analysis["historical_commentary"].strip():
         raise ValueError("empty_historical_commentary")
+    if analysis['historical_commentary'] != historical_commentary(metrics):
+        raise ValueError('historical_statement_mismatch')
     citations = analysis["cited_news_ids"]
     allowed = {article["id"] for article in news["articles"]}
     if not isinstance(citations, list) or any(not isinstance(item, str) or item not in allowed for item in citations):
@@ -213,18 +244,20 @@ class ReportAgent:
             messages = [{"role": "system", "content": NARRATIVE_SYSTEM}, {"role": "user", "content": json.dumps({
                 "territories": territories, "reference": snapshot["metadata"]["reference"],
                 "metrics": metrics,
+                "historical_commentary_verified": historical_commentary(metrics),
                 "news": {"status": news["status"], "articles": [{key: article[key] for key in (
                     "id", "title", "excerpt", "source", "published_at")} for article in news["articles"]]}
                 }, ensure_ascii=False)}]
             for attempt in range(2):
                 draft = None
                 try:
-                    response = self.client.complete(messages, schema=output_schema(territories))
+                    response = self.client.complete(messages, schema=output_schema(territories, metrics))
                     emit("llm_draft", model=self.client.model, usage=response["usage"], response_id=response["response_id"])
                     draft = json.loads(response["message"]["content"])
                     validate_analysis(draft, metrics, news)
                     analysis = draft
-                    emit("narrative_validated", numeric_table="deterministic", growth_trends="matched")
+                    emit("narrative_validated", numeric_table="deterministic", growth_trends="matched",
+                         historical_statement="exact_match")
                     break
                 except (ValueError, KeyError, TypeError) as error:
                     diagnostic = validation_diagnostic(error)
@@ -259,4 +292,4 @@ class ReportAgent:
                     "Internação em UTI entre casos não é ocupação operacional de leitos.",
                     "Vacinação declarada entre casos não é cobertura populacional nem eficácia.",
                     "Mortalidade populacional não calculável; letalidade apresentada com definição própria.",
-                    "Contagens pequenas suprimidas; uso restrito a HML, sem liberação pública."]}
+                    "Supressão primária não elimina inferência entre agregados. Demonstração pública, sem garantia completa de privacidade."]}

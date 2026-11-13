@@ -1,11 +1,7 @@
 # Modelo de site adicional. Não substituir o Caddyfile compartilhado inteiro.
-# Caddy >= 2.8. Substituir o token abaixo pelo hash gerado privadamente na VM.
-# Não aplicar enquanto DNS, mounts e versão do proxy não forem conferidos.
+# Estado validado pelo operador: Caddy 2.11.7, HTTPS público sem senha.
+# Não substituir os demais hosts nem abrir a porta 8766 para a internet.
 poc-srag.estacaolab.com.br {
-    basic_auth {
-        srag-hml REPLACE_WITH_BCRYPT_HASH
-    }
-
     header X-Robots-Tag "noindex, nofollow"
 
     reverse_proxy indicium-srag-hml-api:8000 {
