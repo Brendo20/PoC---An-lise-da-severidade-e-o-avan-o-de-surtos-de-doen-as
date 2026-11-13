@@ -156,11 +156,11 @@ def governance(c):
         'Internação em UTI entre casos não mede ocupação operacional de leitos.<br/><br/>'
         'Vacinação entre casos não mede cobertura populacional nem eficácia.<br/><br/>'
         'Notícias: títulos/resumos recentes, sem leitura integral. Acesso sem autenticação; supressão primária não elimina risco de inferência.')
-    box(c, 32, 49, 776, 113, 'Aceite real de integração / HML em 12/11/2026',
-        'Relatório: 62a21130022b4e8296737c20a2de4972. Status complete; três tools; cinco notícias; narrativa validada.<br/>'
-        'Primeira redação rejeitada por números no comentário atual; reparo único aceito. Dezoito eventos de auditoria.<br/>'
+    box(c, 32, 49, 776, 113, 'Aceite final v7 / HML em 13/11/2026',
+        'Relatório: d55a99bf5d54456e9c89442fcc25e9e6. Status complete; três tools; cinco notícias; dezesseis eventos.<br/>'
+        'Histórico conferido; narrativa legada retirada; nenhum aviso, rejeição ou erro do provedor.<br/>'
         'O teste confere métricas iguais ao dashboard, séries de 30 dias e 12 meses e dois gráficos SVG no HTML.<br/>'
-        'Revisão humana em 13/11 encontrou inferências indevidas; correção histórica por regras aguarda validação em HML.<br/>'
+        'Revisão pública do novo resultado em desktop/celular aprovada; histórico por regras sem as inferências anteriores.<br/>'
         'Evidência informada pelo operador. Não equivale a garantia semântica integral, alta disponibilidade ou revisão completa de privacidade.<br/>'
         'Fontes de arquitetura: código em src/srag/, compose.hml.yml e decisões AI-DLC versionadas no repositório.',
         fill='#EDF5EF', accent='#366D4E')

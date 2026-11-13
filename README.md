@@ -6,7 +6,9 @@ Projeto de relatórios epidemiológicos com ferramentas determinísticas e agent
 
 **Demonstração:** https://poc-srag.estacaolab.com.br/ - HTTPS público, sem senha, por decisão do usuário.
 
-Status da entrega em 13/11/2026: integração real e acesso público funcionam. A revisão humana encontrou inferências históricas indevidas no relatório anterior; a correção v7 restringe o histórico a regras verificáveis e aguarda implantação/novo aceite em HML. [Pacote e texto de envio](SUBMISSION.md). Não apresentar o relatório anterior como exemplo final aprovado.
+**Relatório final:** https://poc-srag.estacaolab.com.br/api/reports/d55a99bf5d54456e9c89442fcc25e9e6/html
+
+Status da entrega em 13/11/2026: v7 implantada e validada em HML, com histórico conferido, narrativa anterior retirada e nenhum aviso/erro. Novo relatório revisado publicamente em desktop/celular. [Pacote e texto de envio](SUBMISSION.md). O histórico é limitado a regras verificáveis; o LLM comenta notícias atuais. Limitações do CSV e da exposição pública estão documentadas.
 
 ## Documentação
 - [Requisitos e critérios de aceite](aidlc-docs/inception.md)
@@ -198,7 +200,7 @@ O último comando realiza uma geração real e consome a quota disponível; impr
 
 Testes locais: suíte Python e `tests/frontend-agent.cjs` usam dublês de Groq/banco/notícias. O servidor `tests/serve_api_fixture.py` habilita essa simulação explicitamente. Executar o teste de navegador não atesta acesso real aos provedores. Desenho e critérios AI-DLC: [U5 — agente e relatórios](aidlc-docs/units/U5-agent-reports.md).
 
-Pendência final: implantar e validar a correção semântica v7, gerar e ler um novo relatório. DNS/Caddy públicos foram validados e a revisão visual somente leitura passou em desktop/celular. Diagrama PDF e texto de envio disponíveis. Ocupação operacional de UTI, cobertura vacinal e mortalidade populacionais permanecem não calculáveis pelo CSV exclusivo; proxies não substituem essas definições.
+Pacote pronto para envio: v7 implantada, novo relatório completo e revisão de consistência/visual concluída. Diagrama PDF e texto de envio disponíveis. Ocupação operacional de UTI, cobertura vacinal e mortalidade populacionais permanecem não calculáveis pelo CSV exclusivo; proxies não substituem essas definições. A PoC não é uma implantação clínica de produção.
 
 ### Diagrama reproduzível
 
@@ -211,3 +213,5 @@ Operador confirmou build ARM64 saudável e execução de `check_agent_hml.py` co
 HTML interno: `/api/reports/62a21130022b4e8296737c20a2de4972/html`. O arquivo e sua auditoria permanecem no volume privado de HML, fora do repositório público. Aceite da integração real registrado em [U5](aidlc-docs/units/U5-agent-reports.md); revisão de conteúdo, consistência semântica e exposição externa continuam separadas.
 
 **Revisão posterior em 13/11:** o comentário histórico desse relatório inferia estabilidade de percentuais e impacto da vacinação sem evidência. O aceite anterior foi apenas técnico; ele não deve ser usado como exemplo final. Na v7, histórico é produzido por regras determinísticas, limitado ao crescimento semanal e às definições dos indicadores; schema e validador exigem igualdade com esse texto. O LLM continua comentando as notícias atuais. Relatórios legados incompatíveis têm narrativa retirada na projeção pública, mantendo os arquivos originais intactos. Sessenta e três testes locais incluem regressões dessa falha. A inspeção pública em 360/1100px passou para acesso, comparação, gráficos, bloqueio de arquivos privados e ausência de erros JavaScript, sem novas chamadas ao modelo.
+
+**Aceite final v7 em 13/11:** relatório d55a99bf5d54456e9c89442fcc25e9e6 retornou complete, narrativa_validada=true, historico_conferido=true e narrativa_legada_retirada=true. Três rodadas de ferramentas, cinco notícias, dezesseis eventos, zero avisos/rejeições/erros. A revisão pública desse novo resultado passou em 360/1100px; leitura do histórico confirmou as descrições vinculadas às regras, sem alegação de estabilidade não medida ou impacto vacinal. Reproduzir a revisão somente leitura com `SRAG_REVIEW_REPORT_ID` e `node tests/frontend-public.cjs`, com Playwright/Edge disponíveis. Nenhuma geração é acionada por esse teste.

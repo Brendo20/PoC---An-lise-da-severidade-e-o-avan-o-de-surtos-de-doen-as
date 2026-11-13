@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const { chromium } = require(process.env.SRAG_PLAYWRIGHT_MODULE || 'playwright');
 const base = 'https://poc-srag.estacaolab.com.br/';
-const reportId = process.env.SRAG_REVIEW_REPORT_ID || '62a21130022b4e8296737c20a2de4972';
+const reportId = process.env.SRAG_REVIEW_REPORT_ID || 'd55a99bf5d54456e9c89442fcc25e9e6';
 const assert = (value, message) => { if (!value) throw Error(message); };
 
 (async () => {

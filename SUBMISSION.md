@@ -2,18 +2,19 @@
 
 ## Situação da entrega
 
-Material preparado em 13/11/2026. **Aguardar o aceite da correção semântica v7 em HML antes de enviar.** A leitura final encontrou inferências indevidas no relatório antigo, embora ele tivesse passado no validador anterior. Correção, regressões e tratamento de relatórios legados estão no código; a implantação ainda não foi confirmada.
+**Material pronto para envio em 13/11/2026.** A v7 foi implantada e validada em HML: relatório completo, histórico conferido, narrativa legada retirada, sem avisos ou erros. O novo relatório também foi revisado publicamente em desktop/celular, sem novas chamadas ao modelo. Limitações do CSV e da demonstração permanecem explícitas.
 
 ## Links para o avaliador
 
 - Repositório público: https://github.com/Brendo20/PoC---An-lise-da-severidade-e-o-avan-o-de-surtos-de-doen-as
 - Demonstração HTTPS, sem senha: https://poc-srag.estacaolab.com.br/
+- Relatório final validado: https://poc-srag.estacaolab.com.br/api/reports/d55a99bf5d54456e9c89442fcc25e9e6/html
 - PDF conceitual: https://github.com/Brendo20/PoC---An-lise-da-severidade-e-o-avan-o-de-surtos-de-doen-as/blob/main/output/pdf/arquitetura-conceitual-srag.pdf
 - README: instruções, contrato de indicadores, arquitetura e execução.
 - Matriz do desafio: aidlc-docs/delivery-review.md.
 - Registro AI-DLC e evidências: aidlc-docs/progress.md.
 
-Não usar o relatório antigo 62a21130022b4e8296737c20a2de4972 como exemplo final. Após o rebuild, sua narrativa será retirada da projeção pública por incompatibilidade com a regra semântica atual. Os arquivos originais permanecem preservados na VM.
+O exemplo final é d55a99bf5d54456e9c89442fcc25e9e6, prompt srag-2019-v7-grounded-history. O relatório antigo 62a21130022b4e8296737c20a2de4972 teve sua narrativa retirada da projeção pública, confirmado pelo teste HML. Seus arquivos originais permanecem preservados para auditoria.
 
 ## Roteiro de avaliação
 
@@ -36,18 +37,20 @@ Repositório: https://github.com/Brendo20/PoC---An-lise-da-severidade-e-o-avan-o
 
 Demonstração: https://poc-srag.estacaolab.com.br/
 
+Relatório de exemplo: https://poc-srag.estacaolab.com.br/api/reports/d55a99bf5d54456e9c89442fcc25e9e6/html
+
 A PoC utiliza o CSV histórico de SRAG de 2019 do Open DATASUS, com processamento em Python, agregações no PostgreSQL, dashboard interativo e orquestrador com ferramentas de métricas, séries e notícias. Os relatórios incluem dois gráficos, proveniência, limitações e auditoria. O desenvolvimento segue AI-DLC, com decisões e evidências documentadas.
 
 O README apresenta instruções de reprodução, testes, arquitetura e o link para o diagrama conceitual em PDF. Também registra uma limitação do escopo exclusivo do CSV: ocupação operacional de UTI, cobertura vacinal populacional e mortalidade populacional não podem ser calculadas diretamente. Os indicadores auxiliares entre casos estão identificados com suas definições e denominadores, sem serem apresentados como equivalentes aos indicadores populacionais.
 
 Obrigado.
 
-## Último gate antes de encaminhar
+## Aceite final registrado
 
-- Implantar a revisão v7 e executar check_agent_hml.py; confirmar complete e narrativa validada.
-- Ler a narrativa do novo relatório e confirmar ausência de inferências de proteção vacinal ou estabilidade não medidas.
-- Confirmar que o relatório legado aparece parcial/com narrativa retirada, sem apagar seus arquivos originais.
-- Atualizar o registro AI-DLC com o novo report_id e, se desejado, acrescentar o link do relatório novo a esta entrega.
-- Conferir que o último commit está no GitHub e que os três links acima abrem para o avaliador.
+- Operador confirmou v7 completa: três ferramentas, cinco notícias, dezesseis eventos e nenhuma rejeição ou erro do provedor.
+- Histórico conferido pelas regras; leitura do novo texto não encontrou as extrapolações do relatório anterior.
+- Narrativa legada retirada sem apagar evidências originais.
+- Revisão pública somente leitura passou em 360/1100px, com dois gráficos, comparação SP x MG e zero erros JavaScript. Caminhos de dados locais, .env e código retornaram 404.
+- PDF e links de exemplo atualizados para o resultado final. Repositório e demonstração são públicos; quotas e risco residual de inferência documentados.
 
 Este documento prepara a mensagem; nenhum envio ao avaliador foi realizado.
